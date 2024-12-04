@@ -1,0 +1,46 @@
+$font-stack: Helvetica, sans-serif;
+$green-color: rgb(91, 187, 36);
+$orange-color: orange;
+//$primary-color: #faf86d;
+$primary-color: #e9e77e;
+
+@mixin body {
+  font: 100% $font-stack !important;
+  background-color: $primary-color !important;
+  //background-image: url("~@/assets/fruits-pattern-concept.png") !important;
+  //background-repeat: repeat !important;
+  //background-size: 70% !important;
+}
+
+@mixin flex {
+    display: flex;
+}
+
+@mixin column {
+    flex-direction: column;
+  }
+
+@mixin button {
+    background-color: $green-color !important;
+    color: #fff !important;
+    margin: auto;
+}
+
+
+@mixin card {
+    color: #ffff98;
+    margin: 20px;
+}
+
+  @mixin content {
+    margin: 20px;
+    padding: 10px;
+}
+
+@mixin form {
+    width: 50%;
+}
+
+@mixin textfield{
+    margin: 5px;
+  }
