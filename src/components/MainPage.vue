@@ -1,15 +1,15 @@
 <template>
   <v-container>
-    <v-toolbar dense fixed>
+    <!--<v-toolbar color="indigo" dark fixed app>
       <v-toolbar-title>Title</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-toolbar-items class="hidden-sm-and-down">
+      
+      <v-toolbar-items class="hidden-sm-and-down" >
         <div>Имя</div>
         <router-link :to="{ path: '/login'}">
           <v-btn flat>Войти</v-btn>
         </router-link>
       </v-toolbar-items>
-    </v-toolbar>
+    </v-toolbar>-->
     <v-row>
       <h1 class="header">Главная</h1>
     </v-row>

@@ -30,6 +30,7 @@ $primary-color: #e9e77e;
 @mixin card {
     color: #ffff98;
     margin: 20px;
+    width: 100%;
 }
 
   @mixin content {
@@ -44,3 +45,12 @@ $primary-color: #e9e77e;
 @mixin textfield{
     margin: 5px;
   }
+
+@mixin footerLinks{
+  display: flex;
+  align-items: center;
+}
+
+@mixin forMain{
+  margin-top: 20px;
+}

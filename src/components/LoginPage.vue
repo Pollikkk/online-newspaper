@@ -24,7 +24,6 @@
                     Нет аккаунта? Создать
                 </router-link>
             </v-form>
-
           </v-row>
     </v-container>
   </template>

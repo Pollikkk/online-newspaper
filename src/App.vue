@@ -1,17 +1,20 @@
 <template>
   <v-app class="body">
-    <v-main>
+    <HeaderApp></HeaderApp>
+    <v-main class="forMain">
       <RouterView></RouterView>
     </v-main>
   </v-app>
 </template>
 
 <script>
+import HeaderApp from './components/HeaderApp.vue';
 
 export default {
   name: 'App',
 
   components: {
+    HeaderApp
   },
 
   data: () => ({
@@ -28,6 +31,9 @@ export default {
   }
   .button{
     @include button;
+  }
+  .forMain{
+    @include forMain;
   }
 
 </style>
