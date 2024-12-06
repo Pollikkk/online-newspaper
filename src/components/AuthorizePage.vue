@@ -1,53 +1,86 @@
 <template>
     <v-container class="form">
         <v-row class="flex column">
-            <v-card color="#ffff" class="card">
-              <div class="content">
-                <v-row>
+        <v-form v-model="valid">
                   <h3 class="name">Регистрация нового пользователя</h3>
-                </v-row>
-                <v-row>
                     <v-text-field 
                     class="textfield"
+                    :rules="nameRules"
                     placeholder="Имя"
                     type="text"
                   >
                   </v-text-field>
                   <v-text-field
                     class="textfield"
+                    :rules="lastNameRules"
                     placeholder="Фамилия"
                     type="text"
                   >
                   </v-text-field>
-                </v-row>
-                <v-row>
                     <v-text-field
                     class="textfield"
+                    :rules="emailRules"
                     placeholder="Email"
                     type="text"
                   >
                   </v-text-field>
-                </v-row>
-                <v-row>
                     <v-text-field
                     class="textfield"
+                    :rules="passwordRules"
                     placeholder="Пароль"
                     type="text"
                   >
                   </v-text-field>
-                </v-row>
-                <v-row>
                   <v-btn>Зарегистрироваться</v-btn>
-                </v-row>
-              </div>
-            </v-card>
+        </v-form>
           </v-row>
     </v-container>
   </template>
   
   <script>
   export default {
-    name: 'HelloWorld',
+    name: 'AuthorizePage',
+    data:() => ({
+      valid: false,
+      firstname: '',
+      nameRules: [
+        value => {
+          if (value) return true
+
+          return 'Name is required.'
+        }
+      ],
+      lastname: '',
+      lastNameRules: [
+        value => {
+          if (value) return true
+
+          return 'Lastname is required.'
+        }
+      ],
+      email: '',
+      emailRules: [
+        value => {
+          if (value) return true
+
+          return 'E-mail is required.'
+        },
+        value => {
+          if (/.+@.+\..+/.test(value)) return true
+
+          return 'E-mail must be valid.'
+        },
+      ],
+      password: '',
+      passwordRules: [
+        value => {
+          if (value) return true
+
+          return 'Password is required.'
+        }
+      ]
+
+    }),
     props: {
       msg: String
     }

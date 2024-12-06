@@ -1,10 +1,11 @@
 <template>
     <v-container class="form">
         <v-row class="flex column">
-            <v-form fast-fail @submit.prevent>
+            <v-form v-model="valid">
                 <h3 class="name">Вход в личный аккаунт</h3>
                 <v-text-field
                     class="textfield"
+                    :rules="emailRules"
                     placeholder="Email"
                     type="text"
                 >
@@ -12,6 +13,7 @@
           
                 <v-text-field
                   class="textfield"
+                  :rules="passwordRules"
                   placeholder="Пароль"
                   type="text"
                 >
@@ -29,7 +31,32 @@
   
   <script>
   export default {
-    name: 'HelloWorld',
+    name: 'LoginPage',
+    data:() => ({
+      valid: false,
+      email: '',
+      emailRules: [
+        value => {
+          if (value) return true
+
+          return 'E-mail is required.'
+        },
+        value => {
+          if (/.+@.+\..+/.test(value)) return true
+
+          return 'E-mail must be valid.'
+        },
+      ],
+      password: '',
+      passwordRules: [
+        value => {
+          if (value) return true
+
+          return 'Password is required.'
+        }
+      ]
+
+    }),
     props: {
       msg: String
     }
