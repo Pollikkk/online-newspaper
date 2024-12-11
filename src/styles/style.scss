@@ -62,3 +62,26 @@ $comm-color: #b0edf5;
   margin-bottom: 5px;
   width: 50%;
 }
+
+@mixin liked{
+  background-image:url('../assets/liked.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position:center;
+  width:37px;
+  height:27px;
+}
+
+@mixin notLiked{
+  background-image:url('../assets/notLiked.png');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position:center;
+  width:37px;
+  height:30px;
+}
+
+@mixin commsAndLikes{
+  display: flex;
+  justify-content: space-between;
+}

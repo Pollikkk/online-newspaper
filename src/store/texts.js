@@ -11,12 +11,16 @@ export const useTextsStore = defineStore("texts", {
                 name: 'Том Круз и теория рукопожатий', text: '21-летний Уилф Эллиотт из Клактона работает татуировщиком и благодаря своим талантам уже пообщался со многими известными музыкантами, ютуберами и актерами. Художник-дальтоник с удовольствием рисует портреты своих любимых знаменитостей, а после того, как он поделился ими в ***, у него даже появилась возможность познакомиться с некоторыми из них. ', date: '05.12.2024', time: '15:00'}],
         comments: [
             {id: 1, comms: [{text: 'wow', who:"Петр", date:"06.12.2024", time: '13:15'}]},
-            {id: 2,
-            comms: [{text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '16:00'},
+            {id: 2, comms: [{text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Ого', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Ого', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Ого', who:"Алексей", date:"06.12.2024", time: '16:00'},
+                {text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '16:00'},
                 {text: 'Ого', who:"Алексей", date:"06.12.2024", time: '16:00'}
             ]},
-            {id: 3,
-            comms: [{text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '18:00'}]},   //комменты- массив объектов- name: название статьи, comms: [{text: ..., who:..., date:...}]
+            {id: 3, comms: [{text: 'Вот это поворот', who:"Алексей", date:"06.12.2024", time: '18:00'}]},   //комменты- массив объектов- name: название статьи, comms: [{text: ..., who:..., date:...}]
             ],
         likes: [{id: 1, peopeId: [1,10]},
                 {id: 2, peopeId: [2, 32]},
@@ -27,6 +31,12 @@ export const useTextsStore = defineStore("texts", {
       };
     },
     getters: {
+      getCurrentUser(){//получить id авторизованного пользователя
+        return 5;
+      },
+      isLiked(id){//проверка лайка у конкретного поста
+        return this.likes.find(y=>y.id === id).peopeId.indexOf(this.getCurrentUser);
+      }
       
     },
     actions: {
@@ -42,7 +52,12 @@ export const useTextsStore = defineStore("texts", {
         console.log('Коммы: ');
         console.log(this.comments.filter(i=>i.id === id).map((e) => { return e.comms}));
         return this.comments.filter(i=>i.id === id).map((e) => { return e.comms});
-      }
+      },
+
+      countLikes(id){
+        return this.likes.find(x=>x.id === id).peopeId.length;
+      },
+      
     },
   });
   
