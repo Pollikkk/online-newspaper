@@ -3,6 +3,7 @@ $green-color: rgb(91, 187, 36);
 $orange-color: orange;
 //$primary-color: #faf86d;
 $primary-color: #e9e77e;
+$comm-color: #b0edf5;
 
 @mixin body {
   font: 100% $font-stack !important;
@@ -53,4 +54,11 @@ $primary-color: #e9e77e;
 
 @mixin forMain{
   margin-top: 20px;
+}
+
+@mixin comments{
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 5px;
+  width: 50%;
 }
