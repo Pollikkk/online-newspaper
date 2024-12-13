@@ -32,11 +32,9 @@ export const useTextsStore = defineStore("texts", {
     },
     getters: {
       getCurrentUser(){//получить id авторизованного пользователя
-        return 5;
+        return 3;
       },
-      isLiked(id){//проверка лайка у конкретного поста
-        return this.likes.find(y=>y.id === id).peopeId.indexOf(this.getCurrentUser);
-      }
+      
       
     },
     actions: {
@@ -57,7 +55,9 @@ export const useTextsStore = defineStore("texts", {
       countLikes(id){
         return this.likes.find(x=>x.id === id).peopeId.length;
       },
-      
+      isLiked(id){//проверка лайка у конкретного поста
+        return this.likes.find(y=>y.id === id).peopeId.indexOf(this.getCurrentUser);
+      }
     },
   });
   

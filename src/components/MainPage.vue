@@ -107,7 +107,9 @@ export default {
       }
     },
     likeValue(id){//определяем, лайкнут ли пост
-      return this.textsStore.isLiked(id) === -1 ? 'notLiked' : 'liked';//меняем стили
+      console.log(this.textsStore.likes.find(y=>y.id === id).peopeId.indexOf(3));
+      return this.textsStore.isLiked(id) === -1 ? 'notLiked' : 'liked'; //меняем стили
+      //return 'notLiked';
     }
   },
   computed:{
