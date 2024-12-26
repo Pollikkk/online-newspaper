@@ -11,22 +11,53 @@ const router = createRouter({
 		},
 		{
 			name: 'main',
-			path: '/main',
-			component: MainPage
+			path: '/',
+			component: MainPage,
+            meta: { 
+                requiresAuth: true
+            }
 		},
 		{
 			name: 'login',
 			path: '/login',
-			component: LoginPage
+			component: LoginPage,
+            meta: { 
+                guest: true
+            }
 		},
 		{
-			name: 'authorize',
-			path: '/authorize',
-			component: AuthorizePage
+			name: 'register',
+			path: '/register',
+			component: AuthorizePage,
+            meta: { 
+                guest: true
+            }
 		},
 	]
 	,
 	history: createWebHistory()
 });
+
+/*router.beforeEach(async (to, from, next) => {
+    // redirect to login page if not logged in and trying to access a restricted page
+    if(to.matched.some(record => record.meta.requiresAuth)) {
+        if (localStorage.getItem('jwt') == null) {
+            next({
+                path: '/login',
+                params: { nextUrl: to.fullPath }
+            })
+        } else {
+            //let user = JSON.parse(localStorage.getItem('user'))
+            next()
+        }
+    } else if(to.matched.some(record => record.meta.guest)) {
+        if(localStorage.getItem('jwt') == null){
+            next()
+        }
+        else{
+            next({ name: 'main'})
+        }
+    }
+});*/
 
 export default router;

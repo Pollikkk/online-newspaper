@@ -2,8 +2,9 @@ $font-stack: Helvetica, sans-serif;
 $green-color: rgb(91, 187, 36);
 $orange-color: orange;
 //$primary-color: #faf86d;
-$primary-color: #e9e77e;
+$primary-color: #0e0d27;
 $comm-color: #b0edf5;
+$btn-send-color: #958eff;
 
 @mixin body {
   font: 100% $font-stack !important;
@@ -60,28 +61,68 @@ $comm-color: #b0edf5;
   display: flex;
   flex-direction: column;
   margin-bottom: 5px;
-  width: 50%;
+  width: 30%;
+  border: 1px solid #8300a3;
+  color: #8300a3;
 }
 
 @mixin liked{
-  background-image:url('../assets/liked.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position:center;
-  width:37px;
-  height:27px;
+  //background-image:url('../assets/liked.png');
+  //background-repeat: no-repeat;
+  //background-size: cover;
+  //background-position:center;
+  //width:37px;
+  //height:27px;
+  color: #d63d3d;
+  content: '♥️';
+  font-weight:bold;
+  font-size: 35px;
+  //margin: 5px;
+  cursor: pointer;
 }
 
 @mixin notLiked{
-  background-image:url('../assets/notLiked.png');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position:center;
-  width:37px;
-  height:30px;
+  //background-image:url('../assets/notLiked.png');
+  //background-repeat: no-repeat;
+  //background-size: cover;
+  //background-position:center;
+  //width:37px;
+  //height:30px;
+  color: #ffffff;
+  font-size: 35px;
+  //margin: 7px;
+  cursor: pointer;
 }
 
 @mixin commsAndLikes{
   display: flex;
   justify-content: space-between;
+}
+
+@mixin date{
+  color: #8d8d8d;
+  font-size: 15px;
+  display: flex;
+  text-align: right;
+}
+
+@mixin titleText{
+  color:#fff;
+  font-size: 30px;
+  font-weight:bolder;
+}
+
+@mixin subtitleText{
+  color:#fff;
+  font-size: 15px;
+  font-weight: lighter;
+  font-style: italic;
+}
+
+@mixin name{
+  color:#fff;
+}
+
+@mixin cardLogin{
+  padding: 40px;
 }
