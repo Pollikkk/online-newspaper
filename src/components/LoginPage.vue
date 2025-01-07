@@ -1,6 +1,6 @@
 <template>
   <v-container class="form">
-    <v-card class="cardLogin" color="#fff">
+    <v-card class="cardLogin card" color="#fff">
       <v-row class="flex column">
           <v-form v-model="valid">
               <h3 class="name" color="#fff">Вход в личный аккаунт</h3>
@@ -79,15 +79,17 @@ export default {
   methods:{
     async login() {
       try {
-        const response = await axios.post('/auth/login', this.credentials);
+        const response = await axios.post('http://localhost:8081/auth/login', this.credentials);
         const token = response.data;
 
         // Сохраняем токен в localStorage
         localStorage.setItem('token', token);
+        localStorage.setItem('person', this.credentials.email);
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         // Переход на страницу новостей
-        this.$emit('auth-success', this.credentials.email);
+        this.$router.push({ name: 'main' });
+        //this.$emit('auth-success', this.credentials.email);
       } catch (error) {
         console.error('Ошибка при авторизации:', error);
         alert('Ошибка авторизации');

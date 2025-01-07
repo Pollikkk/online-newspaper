@@ -1,14 +1,15 @@
 <template>
   <v-container class="form">
+    <v-card class="cardLogin card" color="#fff">
       <v-row class="flex column">
-      <v-form v-model="valid">
+        <v-form v-model="valid">
                 <h3 class="name">Регистрация нового пользователя</h3>
                   <v-text-field 
                   class="textfield"
                   :rules="nameRules"
                   placeholder="Имя"
                   type="text"
-                  v-model="firstname"
+                  v-model="credentials.firstname"
                 >
                 </v-text-field>
                 <v-text-field
@@ -16,7 +17,7 @@
                   :rules="lastNameRules"
                   placeholder="Фамилия"
                   type="text"
-                  v-model="lastname"
+                  v-model="credentials.lastname"
                 >
                 </v-text-field>
                   <v-text-field
@@ -24,7 +25,7 @@
                   :rules="emailRules"
                   placeholder="Email"
                   type="text"
-                  v-model="email"
+                  v-model="credentials.email"
                 >
                 </v-text-field>
                   <v-text-field
@@ -32,7 +33,7 @@
                   :rules="passwordRules"
                   placeholder="Пароль"
                   type="text"
-                  v-model="password"
+                  v-model="credentials.password"
                 >
                 </v-text-field>
                 <v-text-field
@@ -40,12 +41,13 @@
                   :rules="passwordRules"
                   placeholder="Введите пароль повторно"
                   type="text"
-                  v-model="password_confirmation"
+                  v-model="credentials.password_confirmation"
                 >
                 </v-text-field>
-                <v-btn type="submit" @click="handleSubmit">Зарегистрироваться</v-btn>
+                <v-btn type="submit" @click="register">Зарегистрироваться</v-btn>
       </v-form>
-        </v-row>
+      </v-row>
+      </v-card>
   </v-container>
 </template>
 
@@ -53,90 +55,80 @@
 import axios from 'axios';
 
 export default {
-  name: 'AuthorizePage',
+  name: 'RegisterPage',
   props : ["nextUrl"],
   data:() => ({
     valid: false,
-    firstname: '',
-    lastname: '',
-    email: '',
-    password: '',
-    password_confirmation : "",
+    credentials: {
+      firstname: '',
+      lastname: '',
+      email: '',
+      password: '',
+      password_confirmation : ''
+    },
+    
 
     nameRules: [
       value => {
         if (value) return true
 
-        return 'Name is required.'
+        return 'Имя- обязательное поле.'
       }
     ],
     lastNameRules: [
       value => {
         if (value) return true
 
-        return 'Lastname is required.'
+        return 'Фамилия- обязательное поле.'
       }
     ],
     emailRules: [
       value => {
         if (value) return true
 
-        return 'E-mail is required.'
+        return 'E-mail- обязательное поле.'
       },
       value => {
         if (/.+@.+\..+/.test(value)) return true
 
-        return 'E-mail must be valid.'
+        return 'E-mail должен быть валидным.'
       },
     ],
     passwordRules: [
       value => {
         if (value) return true
 
-        return 'Password is required.'
+        return 'Пароль- обязательное поле.'
       }
     ]
 
   }),
   methods: {
-    handleSubmit(e) {
-      console.log(this.$route.params);
-              e.preventDefault();
-              if (this.password === this.password_confirmation && this.password.length > 0)
-              {
-                  let url = "http://localhost:3000/register"
-                  axios.post(url, {
-                    firstname: this.firstname,
-                    lastname: this.lastname,
-                    email: this.email,
-                    password: this.password
-                  })
-                  .then(response => {
-                      localStorage.setItem('user',JSON.stringify(response.data.user))
-                      localStorage.setItem('jwt',response.data.token)
+    async register() {
+      try {
+        if (this.credentials.password === this.credentials.password_confirmation && this.credentials.password.length > 0)
+          {
+            const response = await axios.post('http://localhost:8081/auth/register', this.credentials);
+            const token = response.data;
 
-                      if (localStorage.getItem('jwt') != null){
-                          this.$emit('loggedIn')
-                          if(this.$route.params.nextUrl != null){
-                              this.$router.push(this.$route.params.nextUrl)
-                              location.reload();//
-                          }
-                          else{
-                              this.$router.push('/')
-                              location.reload();//
-                          }
-                      }
-                  })
-                  .catch(error => {
-                      console.error(error);
-                  });
-              } else {
-                  this.password = ""
-                  this.passwordConfirm = ""
+            // Сохраняем токен в localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('person', this.credentials.email);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                  return alert("Passwords do not match")
-              }
+            // Переход на страницу новостей
+            this.$router.push({ name: 'main' });
+          } 
+          else {
+            this.credentials.password = ""
+            this.credentials.passwordConfirm = ""
+            return alert("Passwords do not match")
           }
+      } catch (error) {
+        console.error('Ошибка при регистрации:', error);
+        alert('Ошибка регистрации');
+      }
+    }
   }
 }
 </script>
@@ -166,5 +158,9 @@ export default {
 
 .textfield{
   @include textfield;
+}
+
+.cardLogin{
+  @include cardLogin;
 }
 </style>

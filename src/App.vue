@@ -5,19 +5,24 @@
       <RouterView></RouterView>
     </v-main>-->
 
+    <HeaderApp></HeaderApp>
+    <v-main class="forMain">
+      <RouterView></RouterView>
+    </v-main>
+
+    <!--
     <LoginPage v-if="!isLoggedIn" @auth-success="handleAuthSuccess" />
     <MainPage
       v-else
       :userEmail="userEmail"
       @logout="handleLogout"
-    />
+    />-->
   </v-app>
 </template>
 
 <script>
-/*
-import HeaderApp from './components/HeaderApp.vue';
 
+import HeaderApp from './components/HeaderApp.vue';
 export default {
   name: 'App',
 
@@ -28,13 +33,11 @@ export default {
   data: () => ({
     //
   }),
-}*/
+
+/*
 import axios from 'axios';
-import LoginPage from './components/LoginPage.vue';
-import MainPage from './components/MainPage.vue';
 
 export default {
-  components: { LoginPage, MainPage },
   data() {
     return {
       isLoggedIn: false,
@@ -58,7 +61,7 @@ export default {
       this.isLoggedIn = true;
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
-  }
+  }*/
 };
 </script>
 

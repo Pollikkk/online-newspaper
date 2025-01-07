@@ -1,9 +1,7 @@
 <template>
   <v-container>
-
-    <p>Вы вошли как: {{ userEmail }}</p>
-    <button @click="logout">Выйти</button>
-
+    <!--<p>Вы вошли как: {{ userEmail }}</p>
+    <button @click="logout">Выйти</button>-->
 
     <v-flex xs12 sm6 offset-sm3>
       <v-card 

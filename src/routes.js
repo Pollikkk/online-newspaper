@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory  } from 'vue-router';
 import MainPage from './components/MainPage.vue';
 import LoginPage from './components/LoginPage.vue';
-import AuthorizePage from './components/AuthorizePage.vue';
+import RegisterPage from './components/RegisterPage.vue';
 
 const router = createRouter({
 	routes: [
@@ -13,25 +13,25 @@ const router = createRouter({
 			name: 'main',
 			path: '/',
 			component: MainPage,
-            meta: { 
+            /*meta: { 
                 requiresAuth: true
-            }
+            }*/
 		},
 		{
 			name: 'login',
 			path: '/login',
 			component: LoginPage,
-            meta: { 
+            /*meta: { 
                 guest: true
-            }
+            }*/
 		},
 		{
 			name: 'register',
 			path: '/register',
-			component: AuthorizePage,
-            meta: { 
+			component: RegisterPage,
+            /*meta: { 
                 guest: true
-            }
+            }*/
 		},
 	]
 	,
@@ -41,7 +41,7 @@ const router = createRouter({
 /*router.beforeEach(async (to, from, next) => {
     // redirect to login page if not logged in and trying to access a restricted page
     if(to.matched.some(record => record.meta.requiresAuth)) {
-        if (localStorage.getItem('jwt') == null) {
+        if (localStorage.getItem('token') == null) {
             next({
                 path: '/login',
                 params: { nextUrl: to.fullPath }
@@ -51,7 +51,7 @@ const router = createRouter({
             next()
         }
     } else if(to.matched.some(record => record.meta.guest)) {
-        if(localStorage.getItem('jwt') == null){
+        if(localStorage.getItem('token') == null){
             next()
         }
         else{
