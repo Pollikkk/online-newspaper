@@ -18,23 +18,34 @@
 
 <script>
 //import { useAuthStore } from "../store/auth.store";
-
+import axios from 'axios';
 export default {
 setup() {
 },
 methods:{
   getUser(){
-    console.log(localStorage.getItem('user'))
-    return localStorage.getItem('user') == null; 
+    console.log(localStorage.getItem('person'))
+    return localStorage.getItem('person') == null; 
   },
-  logout(){
-    localStorage.removeItem('user');
-    localStorage.removeItem('jwt');
-    location.reload();
+  async logout(){
+    try {
+        const response = await axios.get('http://localhost:8081/auth/logout');
+        axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
+        if (response.status === 200) {
+          alert('Вы успешно вышли!');
+          // Перенаправление на главную страницу
+          localStorage.removeItem('person');
+          localStorage.removeItem('token');
+          location.reload();
+        }
+      } catch (error) {
+        console.error('Ошибка при выходе:', error);
+        alert('Не удалось выйти. Попробуйте еще раз.');
+      }
   }
 },
 computed:{
-  username(){ return localStorage.getItem('user')},
+  username(){ return localStorage.getItem('person')},
 
 }
 

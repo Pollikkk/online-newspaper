@@ -44,7 +44,7 @@
                   v-model="credentials.password_confirmation"
                 >
                 </v-text-field>
-                <v-btn type="submit" @click="register">Зарегистрироваться</v-btn>
+                <v-btn block type="submit" @click="register" color="#0e0d27">Зарегистрироваться</v-btn>
       </v-form>
       </v-row>
       </v-card>
@@ -108,7 +108,7 @@ export default {
       try {
         if (this.credentials.password === this.credentials.password_confirmation && this.credentials.password.length > 0)
           {
-            const response = await axios.post('http://localhost:8081/auth/register', this.credentials);
+            const response = await axios.post('http://localhost:8081/auth/registration', this.credentials);
             const token = response.data;
 
             // Сохраняем токен в localStorage

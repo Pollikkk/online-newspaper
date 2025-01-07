@@ -3,7 +3,7 @@
     <v-card class="cardLogin card" color="#fff">
       <v-row class="flex column">
           <v-form v-model="valid">
-              <h3 class="name" color="#fff">Вход в личный аккаунт</h3>
+              <h3 class="name">Вход в личный аккаунт</h3>
               <v-text-field
                   class="textfield"
                   :rules="emailRules"
@@ -26,7 +26,7 @@
               >
               </v-text-field>
         
-              <v-btn block type="submit" @click="login">
+              <v-btn block type="submit" @click="login" color="#0e0d27">
                 Войти
               </v-btn>
               <router-link :to="{ path: '/register'}">
@@ -54,19 +54,19 @@ export default {
       value => {
         if (value) return true
 
-        return 'E-mail is required.'
+        return 'E-mail- обязательное поле.'
       },
       value => {
         if (/.+@.+\..+/.test(value)) return true
 
-        return 'E-mail must be valid.'
+        return 'E-mail должен быть валидным.'
       },
     ],
     passwordRules: [
       value => {
         if (value) return true
 
-        return 'Password is required.'
+        return 'Password- обязательное поле.'
       }
     ],
 
@@ -102,10 +102,6 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 @import "../styles/style.scss";
-
-.name{
-  @include name;
-}
 
 .card{
   @include card;
