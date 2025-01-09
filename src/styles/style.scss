@@ -125,3 +125,8 @@ $btn-send-color: #958eff;
 @mixin cardLogin{
   padding: 40px;
 }
+
+@mixin error{
+  color:#fff;
+  font-size: 25px;
+}
