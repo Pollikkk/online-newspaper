@@ -176,6 +176,7 @@ export default {
         this.newsList.push(...news.map((n) => ({ ...n, commentText: '', commentsPage: 0, comments: []}))); // Добавляем новости к списку
       } catch (error) {
         console.error('Ошибка при загрузке новостей:', error);
+        console.log('Ошибка при загрузке новостей:', error);
         this.error = 'Не удалось загрузить новости. Пожалуйста, попробуйте позже.';
       }finally {
         this.loading = false;

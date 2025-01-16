@@ -8,6 +8,6 @@ module.exports = defineConfig({
 		}
   },
   devServer: {
-    proxy: 'http://localhost:8080', // Адрес вашего Spring-сервера
-  },
+        port: 8080 // Убедитесь, что значение - число
+    }
 })

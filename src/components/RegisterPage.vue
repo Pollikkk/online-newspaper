@@ -108,7 +108,7 @@ export default {
       try {
         if (this.credentials.password === this.credentials.password_confirmation && this.credentials.password.length > 0)
           {
-            const response = await axios.post('http://localhost:8081/auth/registration', this.credentials);
+            const response = await axios.post('http://localhost:8081/api/auth/registration', this.credentials);
             const token = response.data;
 
             // Сохраняем токен в localStorage
@@ -125,8 +125,8 @@ export default {
             return alert("Passwords do not match")
           }
       } catch (error) {
-        console.error('Ошибка при регистрации:', error);
-        alert('Ошибка регистрации');
+        console.error('Ошибка при регистрации:' + error);
+        alert('Ошибка регистрации', error);
       }
     }
   }
