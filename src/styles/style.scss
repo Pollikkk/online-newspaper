@@ -130,3 +130,13 @@ $btn-send-color: #958eff;
   color:#fff;
   font-size: 25px;
 }
+
+@mixin textNewsPart{
+  white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis; /* с многоточием в конце */ 
+}
+
+@mixin textNewsAll{
+  overflow-wrap: anywhere;
+}

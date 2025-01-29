@@ -11,7 +11,7 @@ const router = createRouter({
 		},
 		{
 			name: 'main',
-			path: '/',
+			path: '/main',
 			component: MainPage,
             /*meta: { 
                 requiresAuth: true

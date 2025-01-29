@@ -48,7 +48,8 @@ export default {
     valid: false,
     credentials: {
         email: '',
-        password: ''
+        password: '',
+        token: ''
     },
     emailRules: [
       value => {
@@ -72,6 +73,7 @@ export default {
 
   }),
   setup() {
+    
   },
   props: {
     msg: String
@@ -79,17 +81,30 @@ export default {
   methods:{
     async login() {
       try {
-        const response = await axios.post('http://localhost:8081/auth/login', this.credentials);
-        const token = response.data;
-
-        // Сохраняем токен в localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('person', this.credentials.email);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
+        const response = await axios.post('http://localhost:8081/auth/login', {
+          email: this.credentials.email,
+          password: this.credentials.password
+        }, // Параметры credentials автоматически передаются как JSON
+          {
+            headers: {
+              'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
+            },
+            withCredentials: true, // Для отправки куки
+          });
+        
+        console.log('Ответ от сервера: ', response); // Логирование ответа от сервера
+        if(response.data!=='Неверные учетные данные пользователя'){
+          this.token = response.data;
+          // Сохраняем токен в localStorage
+          localStorage.setItem('token', this.token);
+          localStorage.setItem('person', this.credentials.email);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${this.token}`;
+        }
+        else{
+          alert(response.data);
+        }
         // Переход на страницу новостей
-        this.$router.push({ name: 'main' });
-        //this.$emit('auth-success', this.credentials.email);
+        //router.push({ name: 'main' });
       } catch (error) {
         console.error('Ошибка при авторизации:', error);
         alert('Ошибка авторизации');

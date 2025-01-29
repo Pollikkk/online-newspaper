@@ -60,7 +60,7 @@ export default {
   data:() => ({
     valid: false,
     credentials: {
-      firstname: '',
+      name: '',
       lastname: '',
       email: '',
       password: '',
@@ -108,16 +108,29 @@ export default {
       try {
         if (this.credentials.password === this.credentials.password_confirmation && this.credentials.password.length > 0)
           {
-            const response = await axios.post('http://localhost:8081/api/auth/registration', this.credentials);
+            const response = await axios.post('http://localhost:8081/auth/registration', {
+              name: this.credentials.name,
+              lastname: this.credentials.lastname,
+              email: this.credentials.email,
+              password: this.credentials.password
+            }, // Параметры credentials автоматически передаются как JSON
+              {
+                headers: {
+                  'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
+                },
+                withCredentials: true, // Для отправки куки
+              });
+            console.log('Ответ от сервера: ', response); // Логирование ответа от сервера
+
             const token = response.data;
 
             // Сохраняем токен в localStorage
             localStorage.setItem('token', token);
             localStorage.setItem('person', this.credentials.email);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
+            alert("Вы успешно зарегистрированы!")
             // Переход на страницу новостей
-            this.$router.push({ name: 'main' });
+            //this.$router.push({ name: 'main' });
           } 
           else {
             this.credentials.password = ""
