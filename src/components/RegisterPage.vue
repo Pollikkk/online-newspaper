@@ -130,12 +130,12 @@ export default {
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             alert("Вы успешно зарегистрированы!")
             // Переход на страницу новостей
-            //this.$router.push({ name: 'main' });
+            window.location.href = "/main";
           } 
           else {
             this.credentials.password = ""
             this.credentials.passwordConfirm = ""
-            return alert("Passwords do not match")
+            return alert("Пароли не совпадают!")
           }
       } catch (error) {
         console.error('Ошибка при регистрации:' + error);

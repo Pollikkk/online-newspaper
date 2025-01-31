@@ -5,7 +5,7 @@
   >
       <v-app-bar-title>
         <router-link :to="{ path: '/main'}">
-          <h3 class="text-h4 white--text">News</h3>
+          <h3 class="headerLogo">News</h3>
         </router-link>
     </v-app-bar-title>
     <v-app-bar-items class="footerLinks">
@@ -93,5 +93,9 @@ computed:{
 .footerLinks{
   @include footerLinks;
 }  
+
+.headerLogo{
+  @include headerLogo;
+}
 
 </style>

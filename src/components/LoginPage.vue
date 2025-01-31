@@ -104,7 +104,7 @@ export default {
           alert(response.data);
         }
         // Переход на страницу новостей
-        //router.push({ name: 'main' });
+        window.location.href = "/main";
       } catch (error) {
         console.error('Ошибка при авторизации:', error);
         alert('Ошибка авторизации');

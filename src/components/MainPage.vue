@@ -52,22 +52,24 @@
             </v-row>
             
             <v-row>
-            <div class="likes"> Комментарии({{item.Comments }}) 
-              <v-btn color="black" @click="showComm(item.id)">Показать больше... </v-btn>
+            <div class="likes"> Комментарии({{item.comments.length }}) 
+              <!--<v-btn color="black" @click="item.showComments=true">Показать больше... </v-btn>-->
             </div>
             </v-row>
-            <!--<v-row class="flex column" md="6" v-if="getShowComm(item.id)">
+            {{ item.showComments }}
+            <v-row class="flex column" md="6" v-if="item.comments.length">
               <v-card color="#000" class="comments"
                 v-for="(item1, index1) in item.comments"
                 id="item1.id"
                 :key="index1"
                 >
                 <p>{{item1.text}}</p>
-                <p>{{item1.who}} {{item1.date}} {{item1.time}}</p>
+                <strong>{{item1.who}} {{item1.date}} {{item1.time}}</strong>
               </v-card>
-              <v-btn color="black" @click="loadMoreComments(item.id)" v-if="kolComm.find(x=>x.id === item.id)['end'] === false">ещё комментарии... </v-btn>
+              <v-btn color="black" @click="loadMoreComments(item.title)">ещё комментарии... </v-btn>
             </v-row>
-            -->
+            <v-row v-else>Комментариев пока нет</v-row>
+            
             <v-row v-if="currentUser != null">
               <v-textarea
               bg-color="grey-dark"
@@ -90,12 +92,32 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8081/News', // URL сервера
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-});
+    baseURL: 'http://localhost:8081/News', // URL сервера
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    withCredentials: true,
+  });
+
+// Отслеживаем, когда у сервера истечет время действия токена
+apiClient.interceptors.response.use(
+    (response) => response, // Если запрос успешен, просто возвращаем его
+    (error) => {
+      if (error.response && error.response.status === 401) {
+        console.log("Токен истек! Удаляем его из хранилища...");
+        
+        // Удаляем токен из localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("person");
+  
+        // Перенаправляем пользователя на страницу входа
+        window.location.href = "/login"; 
+      }
+      
+      return Promise.reject(error); // Возвращаем ошибку для обработки в коде
+    }
+  );
+
 
 // Функция для получения новостей
 async function fetchNews(page) {
@@ -127,34 +149,20 @@ async function likeNews(title, like) {
   }
 }
 
-// Функция для добавления комментария
-async function addComment(commentDTO, newsTitle) {
-  try {
-    const response = await apiClient.post('/addComment', commentDTO, {
-      params: { title: newsTitle },
-    }, // Параметры credentials автоматически передаются как JSON
-          {
-            headers: {
-              'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
-            },
-            withCredentials: true, // Для отправки куки
-          });
-    return response.data; // Возвращает статус
-  } catch (error) {
-    if (error.response) {
-      console.error("Ошибка сервера:", error.response.data);
-    } else {
-      console.error("Ошибка при отправке запроса:", error.message);
-    }
-    throw error;
-  }
-}
-
 // Функция для получения комментариев
 async function fetchComments(page, title) {
   try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiClient.get('/showComm', {
-      params: { page, title },
+      params: { 
+        page: page, 
+        title: title 
+      },
+      headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            },
+            withCredentials: true, // Для отправки куки
     });
     return response.data; // Возвращает список комментариев
   } catch (error) {
@@ -193,7 +201,7 @@ export default {
       this.error = null;
       try {
         const news = await fetchNews(this.currentPage);
-        this.newsList.push(...news.map((n) => ({ ...n, showAllText: false, commentText: '', commentsPage: 0, comments: []}))); // Добавляем новости к списку
+        this.newsList.push(...news.map((n) => ({ ...n, showAllText: false, commentText: '', showComments: true, commentsPage: 0, comments: []}))); // Добавляем новости к списку
       } catch (error) {
         console.error('Ошибка при загрузке новостей:', error);
         console.log('Ошибка при загрузке новостей:', error);
@@ -240,24 +248,43 @@ export default {
       delete axios.defaults.headers.common['Authorization'];
       this.$emit('logout');
     },
+    // Функция для добавления комментария
     async submitComment(title, text) {
       // Находим новость по заголовку
       const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
 
       try {
-        const commentDTO = { text: text }; // Структура объекта CommentDTO /*const commentDTO = { text: newsItem.commentText };*/
-        await addComment(commentDTO, title); // Отправляем запрос на сервер
-        alert('Комментарий добавлен!');
-        newsItem.commentText = '';
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        //const commentDTO = { text: text }; // Структура объекта CommentDTO /*const commentDTO = { text: newsItem.commentText };*/
+        const response = await apiClient.post(
+          `/addComment`,{text: text},
+          {
+            params: { title: title },  // Заголовок новости 
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            },
+            withCredentials: true, // Если требуется аутентификация
+          }
+        );
+
+        if (response.status === 200) {
+          console.log('Комментарий успешно добавлен');
+          alert('Комментарий успешно добавлен');
+          newsItem.commentText = ''; // Очистка поля после успешной отправки
+        } else {
+          console.error('Ошибка при добавлении комментария:', response.data);
+          alert('Ошибка при добавлении комментария');
+        }
       } catch (error) {
         console.error('Ошибка при добавлении комментария:', error);
         alert('Не удалось добавить комментарий.');
       }
     },
-    async loadComments(newsId) {
-      // Находим новость по ID
-      const newsItem = this.newsList.find((news) => news.id === newsId);
+    async loadComments(title) {
+      // Находим новость по заголовку
+      const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
 
       try {
@@ -267,45 +294,21 @@ export default {
         console.error('Ошибка при загрузке комментариев:', error);
       }
     },
-    loadMoreComments(newsId) {
+    loadMoreComments(title) {
       // Находим новость по ID
-      const newsItem = this.newsList.find((news) => news.id === newsId);
+      const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
 
       newsItem.commentsPage++;
-      this.loadComments(newsId);
+      this.loadComments(title);
     },
-
 
     
-    async addComment() {//добавление комментов
-      try {
-        const response = await axios.post(`/News/addComment/${this.title}`, {
-          text: this.commentText
-        }, // Параметры credentials автоматически передаются как JSON
-          {
-            headers: {
-              'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
-            },
-            withCredentials: true, // Для отправки куки
-          });
-        if (response.status === 200) {
-          alert('Комментарий добавлен!');
-          this.showCommentForm = false;
-          this.commentText = '';
-        }
-      } catch (error) {
-        console.error('Ошибка при добавлении комментария:', error);
-      }
-    },
+
     getShowComm(id){//получить комментарии
       console.log('id: ' + id);
       console.log(this.textsStore.getShow(id));
       return this.textsStore.getShow(id);
-    },
-    showComm(id){//показать комментарии
-      this.textsStore.show(id);
-      this.kolComm.push({ id: id, num: 3, end: false });
     },
     showMoreComm(id){ //увеличиваем число видимых комментариев
       if(this.commLength(id)>=this.kolComm.find(x=>x.id === id).num)

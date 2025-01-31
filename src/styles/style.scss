@@ -140,3 +140,9 @@ $btn-send-color: #958eff;
 @mixin textNewsAll{
   overflow-wrap: anywhere;
 }
+
+@mixin headerLogo{
+  color: #ffff;
+  text-decoration: none;
+  font-size: 40px;
+}
