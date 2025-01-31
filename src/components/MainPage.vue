@@ -5,9 +5,9 @@
       <div v-if="loading"  class="error">Загрузка новостей...</div>
       <v-card 
           class="card"
-          v-for="(item, index) in newsList"
-          id="item.id"
-          :key="index"
+          v-for="(item) in newsList"
+          :id="item.id"
+          :key="item.id"
           color="black" 
           v-else>
 
@@ -82,7 +82,7 @@
           </v-card-text>
         </v-slide-y-transition>
       </v-card>
-      <v-btn color="#fff" @click="loadMoreNews">Загрузить еще</v-btn>
+      <v-btn color="#fff" @click="loadNews">Загрузить еще</v-btn>
     </v-flex>
 
   </v-container>
@@ -120,7 +120,7 @@ apiClient.interceptors.response.use(
 
 
 // Функция для получения новостей
-async function fetchNews(page) {
+async function fetchMoreNews(page) {
   try {
     const response = await apiClient.get(`/show/${page}`);
     return response.data; // Возвращает список новостей
@@ -175,6 +175,7 @@ export default {
   props: ['userEmail'],
   data() {
     return {
+      newsLoaded: false,
       foodObr: [],
       prov: [],
       res: false,
@@ -199,11 +200,30 @@ export default {
     async loadNews() {//вывод новостей
       this.loading = true;
       this.error = null;
+      const scrollY = window.scrollY; // Запоминаем текущую позицию прокрутки
+      console.log('Сохраненная позиция прокрутки:', scrollY);
       try {
-        const news = await fetchNews(this.currentPage);
-        this.newsList.push(...news.map((n) => ({ ...n, showAllText: false, commentText: '', showComments: true, commentsPage: 0, comments: []}))); // Добавляем новости к списку
+        const news = await fetchMoreNews(this.currentPage);
+        this.newsList.push(...news.map((n) => ({ 
+          ...n, 
+          showAllText: false, 
+          commentText: '', 
+          showComments: true, 
+          commentsPage: 0, 
+          comments: []
+        }))); // Добавляем новости к списку
+        console.log('Current page:', this.currentPage);
+        this.currentPage++;
+        console.log('After news update:', this.newsList);
+        
+        this.$nextTick(() => {
+          console.log('После загрузки новостей. Позиция прокрутки:', scrollY);
+          window.requestAnimationFrame(() => {
+            window.scrollTo(0, scrollY); // Восстанавливаем позицию прокрутки
+          });
+        });
+        console.log("newsLoaded: ", this.newsLoaded);
       } catch (error) {
-        console.error('Ошибка при загрузке новостей:', error);
         console.log('Ошибка при загрузке новостей:', error);
         this.error = 'Не удалось загрузить новости. Пожалуйста, попробуйте позже.';
       }finally {
@@ -237,16 +257,6 @@ export default {
       console.log(newsTitle);
       console.log(newsItem);
       newsItem.showAllText = !newsItem.showAllText;
-    },
-
-    loadMoreNews() {//загрузка новостей
-      this.currentPage++;
-      this.loadNews();
-    },
-    logout() {
-      localStorage.removeItem('token');
-      delete axios.defaults.headers.common['Authorization'];
-      this.$emit('logout');
     },
     // Функция для добавления комментария
     async submitComment(title, text) {
@@ -302,35 +312,12 @@ export default {
       newsItem.commentsPage++;
       this.loadComments(title);
     },
-
-    
-
-    getShowComm(id){//получить комментарии
-      console.log('id: ' + id);
-      console.log(this.textsStore.getShow(id));
-      return this.textsStore.getShow(id);
-    },
-    showMoreComm(id){ //увеличиваем число видимых комментариев
-      if(this.commLength(id)>=this.kolComm.find(x=>x.id === id).num)
-        this.kolComm.find(x=>x.id === id).num += 3;
-      else this.kolComm.find(x=>x.id === id).end = true;//помечаем, что это конец комментариев
-    },
-    commLength(id){//число комментариев
-      return this.textsStore.comments.find(x=>x.id === id).comms.length;
-    },
-
-    putLike(id){
-      if(this.textsStore.likes.find(x=>x.id === id).peopeId.includes(this.textsStore.getCurrentUser)){//если лайкнут
-        var index = this.textsStore.likes.find(x=>x.id === id).peopeId.indexOf(this.textsStore.getCurrentUser);
-        this.textsStore.likes.find(x=>x.id === id).peopeId.splice(index, 1);//убираем лайк
-      }
-      else{//ставим лайк -> добавляем человека
-        this.textsStore.likes.find(x=>x.id === id).peopeId.push(this.textsStore.getCurrentUser);
-      }
-    }
   },
   mounted() {
-    this.loadNews();
+    if (!this.newsLoaded) {
+      this.loadNews();  // Загружаем новости, только если они ещё не загружены
+      this.newsLoaded = true;  // Устанавливаем флаг, чтобы не загружать новости повторно
+    }
     this.currentUser = localStorage.getItem("person");
   }
 }
