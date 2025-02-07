@@ -389,11 +389,12 @@ export default {
         newsItem.likedByThisUser = liked;
         if(liked){
           //await likeNews(title);
-          newsItem.countLikes = await likeNews(title);
+          await likeNews(title);
+          newsItem.countLikes = newsItem.countLikes + 1;
         }
         else{
-          //await unlikeNews(title, localStorage.getItem('user'));
-          newsItem.countLikes = await unlikeNews(title, localStorage.getItem('person')) - 1;
+          await unlikeNews(title, localStorage.getItem('person'));
+          newsItem.countLikes = newsItem.countLikes - 1;
         }
       } catch (error) {
         console.error('Ошибка при управлении лайком:', error);
