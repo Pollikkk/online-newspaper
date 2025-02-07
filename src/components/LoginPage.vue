@@ -42,6 +42,15 @@
 import axios from 'axios';
 //import { useAuthStore } from "../store/auth.store";
 
+
+const apiAuth = axios.create({ 
+  baseURL: 'http://localhost:8081/auth', // URL сервера
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
 export default {
   name: 'LoginPage',
   data:() => ({
@@ -81,16 +90,11 @@ export default {
   methods:{
     async login() {
       try {
-        const response = await axios.post('http://localhost:8081/auth/login', {
+        const response = await apiAuth.post('/login', {
           email: this.credentials.email,
           password: this.credentials.password
         }, // Параметры credentials автоматически передаются как JSON
-          {
-            headers: {
-              'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
-            },
-            withCredentials: true, // Для отправки куки
-          });
+          );
         
         console.log('Ответ от сервера: ', response); // Логирование ответа от сервера
         if(response.data!=='Неверные учетные данные пользователя'){

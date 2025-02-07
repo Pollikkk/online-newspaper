@@ -9,7 +9,7 @@
                   :rules="nameRules"
                   placeholder="Имя"
                   type="text"
-                  v-model="credentials.firstname"
+                  v-model="credentials.name"
                 >
                 </v-text-field>
                 <v-text-field
@@ -53,6 +53,15 @@
 
 <script>
 import axios from 'axios';
+
+
+/*const apiAuth = axios.create({ 
+  baseURL: 'http://localhost:8081/auth', // URL сервера
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});*/
 
 export default {
   name: 'RegisterPage',
@@ -106,23 +115,35 @@ export default {
   methods: {
     async register() {
       try {
+        
+        console.log(JSON.stringify(this.credentials));
         if (this.credentials.password === this.credentials.password_confirmation && this.credentials.password.length > 0)
           {
-            const response = await axios.post('http://localhost:8081/auth/registration', {
+            const requestData = {
               name: this.credentials.name,
               lastname: this.credentials.lastname,
               email: this.credentials.email,
               password: this.credentials.password
-            }, // Параметры credentials автоматически передаются как JSON
+            };
+          
+            console.log("Отправляемый запрос:", requestData);
+
+            const response = await axios.post('http://localhost:8081/auth/registration', 
               {
-                headers: {
-                  'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
-                },
+                name: this.credentials.name,
+                lastname: this.credentials.lastname,
+                email: this.credentials.email,
+                password: this.credentials.password
+              }, 
+              {
+                headers: {'Content-Type': 'application/json'},
                 withCredentials: true, // Для отправки куки
               });
+              
             console.log('Ответ от сервера: ', response); // Логирование ответа от сервера
 
-            const token = response.data;
+
+            const token = response.data.token;
 
             // Сохраняем токен в localStorage
             localStorage.setItem('token', token);
@@ -135,11 +156,16 @@ export default {
           else {
             this.credentials.password = ""
             this.credentials.passwordConfirm = ""
-            return alert("Пароли не совпадают!")
+            alert("Пароли не совпадают!")
           }
       } catch (error) {
         console.error('Ошибка при регистрации:' + error);
-        alert('Ошибка регистрации', error);
+
+        if (error.response && error.response.data) {
+          alert('Ошибка регистрации: ' + error.response.data);
+        } else {
+          alert('Ошибка при регистрации, попробуйте позже.');
+        }
       }
     }
   }

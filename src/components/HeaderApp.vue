@@ -52,7 +52,7 @@ methods:{
         console.log('Сохраненный токен:', localStorage.getItem('token'));
         //localStorage.removeItem('token');
         //localStorage.removeItem('person');
-
+//
         if (!token) {
             alert('Токен не найден. Вы не авторизованы.');
             return;

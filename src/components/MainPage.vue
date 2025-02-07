@@ -1,8 +1,9 @@
 <template>
   <v-container>
-    <v-flex xs12 sm6 offset-sm3 v-if="error" class="error">{{ error }}</v-flex>
-    <v-flex xs12 sm6 offset-sm3 v-else>
-      <div v-if="loading"  class="error">Загрузка новостей...</div>
+    <v-row>
+    <v-col xs="12" sm="6" v-if="error" class="error">{{ error }}</v-col>
+    <v-col :cols="isAdmin ? 8 : 12" v-else>
+      <div v-if="loading" class="error">Загрузка новостей...</div>
       <v-card 
           class="card"
           v-for="(item) in newsList"
@@ -14,36 +15,37 @@
           <v-img
               class="titleText"
               width="100%"
-              src="https://cdn.vuetifyjs.com/images/cards/desert.jpg"><!--src=item.image-->
+              :src=item.imgSource><!--src=item.image-->
 
           
           <v-container fill-height fluid width="100%">
             <v-layout fill-height>
-              <v-flex xs12 align-end flexbox class="d-flex justify-space-between">
+              <v-col xs="12" align-end flexbox class="d-flex justify-space-between">
                 <div>
                   <div class="titleText">{{item.title}}</div>
                   <div class="subtitleText">Опубликовано {{new Date(item.createdAt).toISOString().split('T')[0]}} {{new Date(item.createdAt).toTimeString().split(' ')[0]}} </div>
                 </div>
                 <span>
-                  <span :class="likeValue(item.liked)" href="#" @click="likeNewsItem(item.title, !item.liked)"> ♡ </span>
-                  {{ item.liked  }}
-                  <!--{{ textsStore.countLikes(item.id) }}-->
+                  <span :class="likeValue(item.likedByThisUser)" href="#" @click="likeNewsItem(item.title, !item.likedByThisUser)"> ♡ </span>
+                  {{ item.countLikes }}
                 </span>
-              </v-flex>
+                <v-btn color="black" v-if="isAdmin" @click="delNew(item.title)">DEL</v-btn>
+                <v-btn color="black" v-if="isAdmin">RED</v-btn>
+              </v-col>
             </v-layout>
           </v-container>
         </v-img>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn icon @click="item.show = !item.show">
+          <!--<v-btn icon @click="item.show = !item.show">
             READ
             <v-icon>{{ item.show ? 'mdi_arrow_down' : 'mdi_arrow_up' }}</v-icon>
-          </v-btn>
+          </v-btn>-->
         </v-card-actions>
 
         <v-slide-y-transition>
-          <v-card-text v-if="!item.show">
+          <v-card-text v-if="!item.show">  <!--  !  -->
             <v-row :class="amountOfText(item.title)">
               {{ item.text }}
             </v-row>
@@ -56,15 +58,16 @@
               <!--<v-btn color="black" @click="item.showComments=true">Показать больше... </v-btn>-->
             </div>
             </v-row>
-            {{ item.showComments }}
+            <!--{{ item.showComments }}-->
             <v-row class="flex column" md="6" v-if="item.comments.length">
               <v-card color="#000" class="comments"
                 v-for="(item1, index1) in item.comments"
                 id="item1.id"
                 :key="index1"
                 >
-                <p>{{item1.text}}</p>
-                <strong>{{item1.who}} {{item1.date}} {{item1.time}}</strong>
+                <strong>{{item1.text}}</strong>
+                <i>{{item1.ownerName}} {{new Date(item1.createdAt).toISOString().split('T')[0]}} {{new Date(item1.createdAt).toTimeString().split(' ')[0]}}</i>
+                <v-btn color="black" v-if="isAdmin" @click="delComment(item.title, item1.id)">DEL</v-btn>
               </v-card>
               <v-btn color="black" @click="loadMoreComments(item.title)">ещё комментарии... </v-btn>
             </v-row>
@@ -83,7 +86,49 @@
         </v-slide-y-transition>
       </v-card>
       <v-btn color="#fff" @click="loadNews">Загрузить еще</v-btn>
-    </v-flex>
+    </v-col>
+    <v-col cols="4" v-if="isAdmin">
+      <v-card class="stickyColumn" color="black" >
+        <v-card-title>Добавить новость:</v-card-title>
+        <v-text-field 
+          v-model="news.title" 
+          bg-color="grey-dark"
+          color="purple"
+          label="Заголовок"
+          required 
+          outlined
+          />
+        <v-textarea
+          v-model="news.text" 
+          bg-color="grey-dark"
+          color="purple"
+          label="Текст новости"
+          required 
+          outlined
+          />
+          <h4>Выберите темы:</h4>
+          <div v-for="item in themes" :key="item">
+            <label>
+              <input type="checkbox" :value="item" v-model="news.themes" />
+              {{ item }}
+            </label>
+          </div>
+        <!--<v-select 
+          v-model="news.themes"
+          :items="themes"
+          label="Выберите тему"
+          required 
+          outlined
+          />-->
+          <p>{{ news.themes }}</p>
+        <v-btn flat color="purple" :disabled="!news.title || !news.text || !news.themes" @click="addNew()">
+          Отправить
+        </v-btn>
+        
+      </v-card>
+
+    </v-col>
+  </v-row>
 
   </v-container>
 </template>
@@ -91,19 +136,40 @@
 <script>
 import axios from 'axios';
 
-const apiClient = axios.create({
-    baseURL: 'http://localhost:8081/News', // URL сервера
+//для newsController, LikeController, CommentController, 
+const apiClient = axios.create({ 
+    baseURL: 'http://localhost:8081/news', // URL сервера
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     },
     withCredentials: true,
   });
+
+//для AdminController
+const apiAdmin = axios.create({ 
+    baseURL: 'http://localhost:8081/admin', // URL сервера
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    withCredentials: true,
+  });
+
+//для ConfigureThemesController
+/*const apiConfig = axios.create({ 
+  baseURL: 'http://localhost:8081/config', // URL сервера
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});*/
 
 // Отслеживаем, когда у сервера истечет время действия токена
 apiClient.interceptors.response.use(
     (response) => response, // Если запрос успешен, просто возвращаем его
     (error) => {
-      if (error.response && error.response.status === 401) {
+      console.log("Что у вас здесь происходит..");
+      console.log(error);
+      if (error.response && error.response.status === 400) {
         console.log("Токен истек! Удаляем его из хранилища...");
         
         // Удаляем токен из localStorage
@@ -122,7 +188,19 @@ apiClient.interceptors.response.use(
 // Функция для получения новостей
 async function fetchMoreNews(page) {
   try {
-    const response = await apiClient.get(`/show/${page}`);
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await apiClient.get(`/showforAuthorized/${page}`,{
+          headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            }
+          });
+    console.log("Новости:" + response.data[0]);
+
+    for (let key in response.data[0]) {
+      console.log(`${key}: ${response.data[0][key]}`);
+    }
+
+
     return response.data; // Возвращает список новостей
   } catch (error) {
     console.error('Ошибка при получении новостей:', error.response || error.message);
@@ -130,17 +208,33 @@ async function fetchMoreNews(page) {
   }
 }
 
-// Функция для управления лайками
-async function likeNews(title, like) {
+// Функции для управления лайками
+async function likeNews(title) {
   try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiClient.post('/like', null, {
-      params: { title, like },
-    }, // Параметры credentials автоматически передаются как JSON
-          {
-            headers: {
-              'Content-Type': 'application/json', // Устанавливаем тип контента как JSON
-            },
-            withCredentials: true, // Для отправки куки
+      params: { title },
+     // Параметры credentials автоматически передаются как JSON
+          headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            }
+          });
+    return response.data; // Возвращает количество лайков
+  } catch (error) {
+    console.error('Ошибка при управлении лайком:', error);
+    throw error;
+  }
+}
+
+async function unlikeNews(title, email) {
+  try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    console.log(email);
+    const response = await apiClient.delete('/unlike', {
+      params: { title, email },
+      headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            }
           });
     return response.data; // Возвращает количество лайков
   } catch (error) {
@@ -159,17 +253,55 @@ async function fetchComments(page, title) {
         title: title 
       },
       headers: {
-              'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
-            },
-            withCredentials: true, // Для отправки куки
+            }
     });
+    const data = response.data;
+    console.log("Ответ при получении комментов: "+response.data);
+    data.forEach(item => {
+            console.log(item);
+            });
+
     return response.data; // Возвращает список комментариев
   } catch (error) {
     console.error('Ошибка при получении комментариев:', error);
     throw error;
   }
 }
+
+//Вывод всех тем
+async function fetchThemes() {
+  try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await axios.get('http://localhost:8081/config/allThemes', {
+      headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            },
+            withCredentials: true, // Для отправки куки
+    });
+    return response.data; // Возвращает список тем
+  } catch (error) {
+    console.error('Ошибка при получении тем:', error);
+    throw error;
+  }
+}
+
+/*async function addNew(){ //добавление новости
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiAdmin.post('/addNew', this.news,{
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        console.log("new new "+response.data);
+        window.location.reload();
+        return response.data; // Возвращает список комментариев
+      } catch (error) {
+        console.error('Ошибка при добавлении новости:', error);
+        throw error
+        }
+    }*/
 
 export default {
   props: ['userEmail'],
@@ -185,12 +317,20 @@ export default {
       newsList: [],//список новостей
       loading: false,
       error: null,
-      currentPage: 0, // Текущая страница
+      currentPage: 1, // Текущая страница
 
       selectedNewsId: null,//
 
       currentUser: null,
+      isAdmin: false,
 
+      news: {
+        title: "",
+        text: "",
+        themes: [],
+      },
+      themes: [],
+    
     };
   },
   name: 'MainPage',
@@ -212,6 +352,20 @@ export default {
           commentsPage: 0, 
           comments: []
         }))); // Добавляем новости к списку
+
+        //console.log(this.newsList);
+
+        if (!this.newsLoaded) {//загружаем первые комментарии, когда страница только открыта
+          this.newsList.forEach(item => {
+            this.loadMoreComments(item['title']);
+            console.log("коммы "+item['comments']);
+              /*console.log("коммы "+item['comments']);
+              console.log("заголовок "+item['title']);
+              console.log("Коммы: " + this.loadMoreComments(item['title']));*/
+            });
+            this.newsLoaded = true;
+        }
+
         console.log('Current page:', this.currentPage);
         this.currentPage++;
         console.log('After news update:', this.newsList);
@@ -230,13 +384,18 @@ export default {
         this.loading = false;
       }
     },
-    async likeNewsItem(title, like) {//ставим лайк
+    async likeNewsItem(title, liked) {//ставим лайк
       try {
-        const likeCount = await likeNews(title, like);
         const newsItem = this.newsList.find((news) => news.title === title);
-        newsItem.liked = like;
-
-        console.log(`Количество лайков для "${title}": ${likeCount}`);
+        newsItem.likedByThisUser = liked;
+        if(liked){
+          //await likeNews(title);
+          newsItem.countLikes = await likeNews(title);
+        }
+        else{
+          //await unlikeNews(title, localStorage.getItem('user'));
+          newsItem.countLikes = await unlikeNews(title, localStorage.getItem('person')) - 1;
+        }
       } catch (error) {
         console.error('Ошибка при управлении лайком:', error);
       }
@@ -272,16 +431,18 @@ export default {
           {
             params: { title: title },  // Заголовок новости 
             headers: {
-              'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             },
             withCredentials: true, // Если требуется аутентификация
           }
         );
+        console.log("new comm "+response);
 
         if (response.status === 200) {
           console.log('Комментарий успешно добавлен');
           alert('Комментарий успешно добавлен');
+          //newsItem.comments.push(response.data);
+          window.location.reload();
           newsItem.commentText = ''; // Очистка поля после успешной отправки
         } else {
           console.error('Ошибка при добавлении комментария:', response.data);
@@ -305,20 +466,104 @@ export default {
       }
     },
     loadMoreComments(title) {
-      // Находим новость по ID
+      // Находим новость по названию
       const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
-
-      newsItem.commentsPage++;
       this.loadComments(title);
+      newsItem.commentsPage++;
+    },
+    async loadThemes(){
+      try {
+        const themesList = await fetchThemes();
+        const themesStr = themesList.toString();
+        const arr = themesStr.split(','); 
+        this.themes = themesStr.split(',');  // Добавляем в массив темы
+        console.log("темы: " + arr);
+
+      } catch (error) {
+        console.error('Ошибка при загрузке тем:', error);
+      }
+    },
+
+    //АДМИН
+    async addNew(){ //добавление новости
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiAdmin.post('/addNew', this.news,{
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        console.log("new new "+response.data);
+        window.location.reload();
+        return response.data; // Возвращает список комментариев
+      } catch (error) {
+        console.error('Ошибка при добавлении новости:', error);
+        throw error
+        }
+    },
+    async delNew(title){ //удаление новости
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiAdmin.delete('/delNew', {
+          params: {title},
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        const index = this.newsList.findIndex(news => news.title === title);
+        if (index !== -1) {
+          this.newsList.splice(index, 1);
+        }
+        return response.data; // Возвращает список комментариев
+      } catch (error) {
+        console.error('Ошибка при удалении новости:', error);
+        throw error
+        }
+    },
+    async redNew(){ //редактирование новости
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiAdmin.get('/redNews', {
+          params: this.news,
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        return response.data; // Возвращает список комментариев
+      } catch (error) {
+        console.error('Ошибка при редактировании новости:', error);
+        throw error
+        }
+    },
+    async delComment(title, id){ //удаление комментария
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiClient.delete('/deleteComment', {
+          params: {titleNews: title, commentId: id},
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        window.location.reload();
+        return response.data; 
+      } catch (error) {
+        console.error('Ошибка при удалении комментария:', error);
+        throw error
+        }
     },
   },
   mounted() {
     if (!this.newsLoaded) {
+      this.loadThemes();  //Загружаем список тем
+      
       this.loadNews();  // Загружаем новости, только если они ещё не загружены
-      this.newsLoaded = true;  // Устанавливаем флаг, чтобы не загружать новости повторно
     }
     this.currentUser = localStorage.getItem("person");
+
+    if(localStorage.getItem('person') == 'Admin@gmail.com'){  //определяем кто пользователь
+      this.isAdmin = true;
+    }else this.isAdmin = false;
   }
 }
 </script>
@@ -381,6 +626,10 @@ export default {
 
 .textNewsPart{
   @include textNewsPart;
+}
+
+.stickyColumn{
+  @include stickyColumn;
 }
 
 </style>
