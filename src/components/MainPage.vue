@@ -12,10 +12,14 @@
           color="black" 
           v-else>
 
+
+          <v-btn color="black" v-if="isAdmin && !item.isEditing" @click="delNew(item.title)">DEL</v-btn>
+          <v-btn color="black" v-if="isAdmin" @click="redNew(item.title)">RED</v-btn>
+
           <v-img
               class="titleText"
               width="100%"
-              :src=item.imgSource><!--src=item.image-->
+              :src=item.imgSource v-if="!item.isEditing">
 
           
           <v-container fill-height fluid width="100%">
@@ -24,27 +28,35 @@
                 <div>
                   <div class="titleText">{{item.title}}</div>
                   <div class="subtitleText">Опубликовано {{new Date(item.createdAt).toISOString().split('T')[0]}} {{new Date(item.createdAt).toTimeString().split(' ')[0]}} </div>
+                  <div class="themesText" v-for="(item) in item.themes" :key="item">
+                    #{{ item }}
+                  </div>
                 </div>
                 <span>
                   <span :class="likeValue(item.likedByThisUser)" href="#" @click="likeNewsItem(item.title, !item.likedByThisUser)"> ♡ </span>
                   {{ item.countLikes }}
                 </span>
-                <v-btn color="black" v-if="isAdmin" @click="delNew(item.title)">DEL</v-btn>
-                <v-btn color="black" v-if="isAdmin">RED</v-btn>
+                <!--<v-btn color="black" v-if="isAdmin" @click="delNew(item.title)">DEL</v-btn>
+                <v-btn color="black" v-if="isAdmin" @click="redNew(item.title)">RED</v-btn>-->
               </v-col>
             </v-layout>
           </v-container>
         </v-img>
 
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <!--<v-btn icon @click="item.show = !item.show">
-            READ
-            <v-icon>{{ item.show ? 'mdi_arrow_down' : 'mdi_arrow_up' }}</v-icon>
-          </v-btn>-->
-        </v-card-actions>
+        <div v-else>
+          <v-text-field  v-model="item.title" label="Редактировать заголовок" />
+          <h4>Редактировать темы:</h4>
+          <div v-for="item1 in themes" :key="item1">
+            <label>
+              <input type="checkbox" :value="item1" v-model="item.themes" />
+              {{ item1 }}
+            </label>
+          </div>
+          <v-text-field  v-model="item.imgSource" label="Ссылка на картинку" />
+        </div>
+        
 
-        <v-slide-y-transition>
+        <v-slide-y-transition v-if="!item.isEditing">
           <v-card-text v-if="!item.show">  <!--  !  -->
             <v-row :class="amountOfText(item.title)">
               {{ item.text }}
@@ -84,6 +96,9 @@
             </v-row>
           </v-card-text>
         </v-slide-y-transition>
+
+        <v-textarea v-else v-model="item.text" label="Редактировать текст"></v-textarea>
+
       </v-card>
       <v-btn color="#fff" @click="loadNews">Загрузить еще</v-btn>
     </v-col>
@@ -286,23 +301,6 @@ async function fetchThemes() {
   }
 }
 
-/*async function addNew(){ //добавление новости
-      try {
-        const token = localStorage.getItem("token"); // Получаем JWT токен
-        const response = await apiAdmin.post('/addNew', this.news,{
-          headers: {
-                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
-                }
-        });
-        console.log("new new "+response.data);
-        window.location.reload();
-        return response.data; // Возвращает список комментариев
-      } catch (error) {
-        console.error('Ошибка при добавлении новости:', error);
-        throw error
-        }
-    }*/
-
 export default {
   props: ['userEmail'],
   data() {
@@ -350,7 +348,8 @@ export default {
           commentText: '', 
           showComments: true, 
           commentsPage: 0, 
-          comments: []
+          comments: [],
+          isEditing: false,
         }))); // Добавляем новости к списку
 
         //console.log(this.newsList);
@@ -425,7 +424,6 @@ export default {
 
       try {
         const token = localStorage.getItem("token"); // Получаем JWT токен
-        //const commentDTO = { text: text }; // Структура объекта CommentDTO /*const commentDTO = { text: newsItem.commentText };*/
         const response = await apiClient.post(
           `/addComment`,{text: text},
           {
@@ -521,11 +519,56 @@ export default {
         throw error
         }
     },
-    async redNew(){ //редактирование новости
+
+    //РЕДАКТИРОВАНИЕ НОВОСТИ
+    async redNew(title){
+      const newsItem = this.newsList.find((news) => news.title === title);
+      newsItem.isEditing = !newsItem.isEditing;
+      let id;
+      if(newsItem.isEditing){
+        id = await this.redNew1(title);
+        console.log("Полученный id: "+id);
+        newsItem.id = id;
+      }else {
+        if (newsItem.id !== undefined && newsItem.id !== null) { // Проверка, что id не пустой
+          await this.redNew2(newsItem.id, title);
+          console.log("id передан в redNew2: " + newsItem.id);
+        } else {
+          console.error("Ошибка: id равен undefined перед вызовом redNew2");
+        }
+        /*await this.redNew2(id, title)
+        console.log("id "+id);*/
+      }
+    },
+    async redNew1(title){ //отправка запроса на сервер на получение id новости
       try {
         const token = localStorage.getItem("token"); // Получаем JWT токен
-        const response = await apiAdmin.get('/redNews', {
-          params: this.news,
+        const response = await apiAdmin.get('/editNews', {
+          params: {title: title},
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        console.log("Ответ от сервера: ", response.data);
+        //const id = response.data; 
+        const id = parseInt(response.data, 10);
+        if (isNaN(id)) {
+          throw new Error("Полученный id не является числом");
+        }
+        console.log("id, полученный из redNew1: "+id);
+        return id; // Возвращает список комментариев
+      } catch (error) {
+        console.error('Ошибка при получении id новости:', error);
+        throw error
+      }
+    },
+    async redNew2(id, title){ //редактирование новости -> запрос на сервер
+      try {
+        const newsItem = this.newsList.find((news) => news.title === title);
+        const body = {id: id, title: newsItem.title, text: newsItem.text, imgSource: newsItem.imgSource, themes: Array.from(newsItem.themes)};
+        console.log("body " + body.id);
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiAdmin.patch('/editNews', body,{
           headers: {
                   'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
                 }
@@ -630,6 +673,10 @@ export default {
 
 .stickyColumn{
   @include stickyColumn;
+}
+
+.themesText{
+  @include themesText;
 }
 
 </style>

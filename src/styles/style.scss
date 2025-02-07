@@ -133,3 +133,10 @@ $btn-send-color: #958eff;
   position: sticky;
   top: 20%;
 }
+
+@mixin themesText{
+  text-decoration: wavy;
+  color:#958eff;
+  text-shadow: #958eff;
+  font-size: 15px;
+}
