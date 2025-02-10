@@ -3,6 +3,21 @@
     <v-row>
     <v-col xs="12" sm="6" v-if="error" class="error">{{ error }}</v-col>
     <v-col :cols="isAdmin ? 8 : 12" v-else>
+      <v-card class="chooseThemes" color="black" v-show="isAdmin">
+        <v-card-title>Сортировка по темам:</v-card-title>
+        <v-card-text class="flex">
+          <div class="flex no-wrap">
+            <div v-for="item in themes" :key="item" >
+            <label>
+              <input type="checkbox" :value="item" v-model="sortThemes" />
+              {{ item }}
+            </label>
+            </div>
+          </div>
+          <v-btn color="black" @click="sortByThemes()">Настроить</v-btn>
+        </v-card-text>
+        
+      </v-card>
       <div v-if="loading" class="error">Загрузка новостей...</div>
       <v-card 
           class="card"
@@ -33,7 +48,7 @@
                   </div>
                 </div>
                 <span>
-                  <span :class="likeValue(item.likedByThisUser)" href="#" @click="likeNewsItem(item.title, !item.likedByThisUser)"> ♡ </span>
+                  <span :class="[likeValue(item.likedByThisUser), { disabled: currentUser===null }]" href="#" @click="likeNewsItem(item.title, !item.likedByThisUser)"> ♡ </span>
                   {{ item.countLikes }}
                 </span>
                 <!--<v-btn color="black" v-if="isAdmin" @click="delNew(item.title)">DEL</v-btn>
@@ -66,24 +81,26 @@
             </v-row>
             
             <v-row>
-            <div class="likes"> Комментарии({{item.comments.length }}) 
-              <!--<v-btn color="black" @click="item.showComments=true">Показать больше... </v-btn>-->
-            </div>
+              <div class="likes"> Комментарии({{item.kolComments}}) 
+                <!--<v-btn color="black" @click="item.showComments=true">Показать больше... </v-btn>-->
+              </div>
             </v-row>
-            <!--{{ item.showComments }}-->
-            <v-row class="flex column" md="6" v-if="item.comments.length">
-              <v-card color="#000" class="comments"
-                v-for="(item1, index1) in item.comments"
-                id="item1.id"
-                :key="index1"
-                >
-                <strong>{{item1.text}}</strong>
-                <i>{{item1.ownerName}} {{new Date(item1.createdAt).toISOString().split('T')[0]}} {{new Date(item1.createdAt).toTimeString().split(' ')[0]}}</i>
-                <v-btn color="black" v-if="isAdmin" @click="delComment(item.title, item1.id)">DEL</v-btn>
-              </v-card>
-              <v-btn color="black" @click="loadMoreComments(item.title)">ещё комментарии... </v-btn>
-            </v-row>
-            <v-row v-else>Комментариев пока нет</v-row>
+              
+            <!--<v-row v-show="currentUser!==null">-->
+              <v-row class="flex column" md="6" v-if="item.kolComments!==0">
+                <v-card color="#000" class="comments"
+                  v-for="(item1, index1) in item.comments"
+                  id="item1.id"
+                  :key="index1"
+                  >
+                  <strong>{{item1.text}}</strong>
+                  <i>{{item1.ownerName}} {{new Date(item1.createdAt).toISOString().split('T')[0]}} {{new Date(item1.createdAt).toTimeString().split(' ')[0]}}</i>
+                  <v-btn color="black" v-show="isAdmin" @click="delComment(item.title, item1.id)">DEL</v-btn>
+                </v-card>
+                <v-btn color="black" v-show="currentUser" @click="loadMoreComments(item.title)">ещё комментарии... </v-btn>
+              </v-row>
+              <v-row v-else>Комментариев пока нет</v-row>
+            <!--</v-row>-->
             
             <v-row v-if="currentUser != null">
               <v-textarea
@@ -100,10 +117,11 @@
         <v-textarea v-else v-model="item.text" label="Редактировать текст"></v-textarea>
 
       </v-card>
-      <v-btn color="#fff" @click="loadNews">Загрузить еще</v-btn>
+      <v-btn color="#fff" @click="loadNews" v-if="!allNews">Загрузить еще</v-btn>
+      <div  class="error" v-else>Это пока все новости</div>
     </v-col>
     <v-col cols="4" v-if="isAdmin">
-      <v-card class="stickyColumn" color="black" >
+      <v-card color="black" class="stickyColumn" >
         <v-card-title>Добавить новость:</v-card-title>
         <v-text-field 
           v-model="news.title" 
@@ -128,21 +146,30 @@
               {{ item }}
             </label>
           </div>
-        <!--<v-select 
-          v-model="news.themes"
-          :items="themes"
-          label="Выберите тему"
+        <v-btn flat color="purple" :disabled="!news.title || !news.text || !news.themes" @click="addNew()">
+          Отправить
+        </v-btn>
+      </v-card>
+    </v-col>
+    <v-col cols="4" v-if="isAdmin">
+      <v-card class="stickyColumn addTheme" color="black" >
+        <v-card-title>Добавить тему:</v-card-title>
+        <v-text-field 
+          v-model="newTheme" 
+          bg-color="grey-dark"
+          color="purple"
+          label="Название"
           required 
           outlined
-          />-->
-          <p>{{ news.themes }}</p>
-        <v-btn flat color="purple" :disabled="!news.title || !news.text || !news.themes" @click="addNew()">
+          />
+        <v-btn flat color="purple" :disabled="!newTheme" @click="addTheme()">
           Отправить
         </v-btn>
         
       </v-card>
-
     </v-col>
+
+
   </v-row>
 
   </v-container>
@@ -169,15 +196,24 @@ const apiAdmin = axios.create({
     withCredentials: true,
   });
 
+  const apiAuth = axios.create({ 
+  baseURL: 'http://localhost:8081/auth', // URL сервера
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
+});
+
 //для ConfigureThemesController
-/*const apiConfig = axios.create({ 
+const apiConfig = axios.create({ 
   baseURL: 'http://localhost:8081/config', // URL сервера
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-});*/
+});
 
+let isAlertShown = false;
 // Отслеживаем, когда у сервера истечет время действия токена
 apiClient.interceptors.response.use(
     (response) => response, // Если запрос успешен, просто возвращаем его
@@ -190,9 +226,13 @@ apiClient.interceptors.response.use(
         // Удаляем токен из localStorage
         localStorage.removeItem("token");
         localStorage.removeItem("person");
+        localStorage.removeItem("name");
   
-        // Перенаправляем пользователя на страницу входа
-        window.location.href = "/login"; 
+        // Отправляем предупреждение
+        if(!isAlertShown){
+          alert("Вы не авторизованы!");
+          isAlertShown = true;
+        }
       }
       
       return Promise.reject(error); // Возвращаем ошибку для обработки в коде
@@ -204,17 +244,23 @@ apiClient.interceptors.response.use(
 async function fetchMoreNews(page) {
   try {
     const token = localStorage.getItem("token"); // Получаем JWT токен
-    const response = await apiClient.get(`/showforAuthorized/${page}`,{
+    let response;
+    if(token!==null){
+      response = await apiClient.get(`/showforAuthorized/${page}`,{
           headers: {
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             }
           });
+    }
+    else{
+      response = await apiClient.get(`/show/${page}`);
+    }
+    
     console.log("Новости:" + response.data[0]);
 
     for (let key in response.data[0]) {
       console.log(`${key}: ${response.data[0][key]}`);
     }
-
 
     return response.data; // Возвращает список новостей
   } catch (error) {
@@ -301,6 +347,50 @@ async function fetchThemes() {
   }
 }
 
+async function countComm(title){   
+      const response = await apiClient.get('/countComm', {
+        params: { title: title }
+      });
+      const kol = await response.data;
+      console.log("kol_comms " + response);
+      console.log("kol_comms " + kol);
+      return kol;
+}
+
+//РАБОТА С ПРЕДПОЧТЕНИЯМИ ПОЛЬЗОВАТЕЛЯ
+async function addPreference(theme){
+  try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await apiConfig.post('/addPrefer', null, {
+        params: {theme: theme, status: true},
+        headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            },
+      });
+      console.log("addPreference " + theme);
+    return response.data; 
+  } catch (error) {
+    console.error('Ошибка при добавлении предпочтения:', error);
+    throw error;
+  }
+}
+async function delPreference(theme){
+  try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await apiConfig.delete('/delPrefer', {
+        params: {theme: theme},
+        headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            },
+      });
+      console.log("delPreference " + theme);
+    return response.data; 
+  } catch (error) {
+    console.error('Ошибка при удалении предпочтения:', error);
+    throw error;
+  }
+}
+
 export default {
   props: ['userEmail'],
   data() {
@@ -327,8 +417,12 @@ export default {
         text: "",
         themes: [],
       },
+      newTheme: '',
       themes: [],
-    
+      sortThemes: [],
+
+      //флаги для прогружающей новости кнопки
+      allNews: false,
     };
   },
   name: 'MainPage',
@@ -342,6 +436,10 @@ export default {
       console.log('Сохраненная позиция прокрутки:', scrollY);
       try {
         const news = await fetchMoreNews(this.currentPage);
+
+        if(news==0){
+          this.allNews = true;
+        }
         this.newsList.push(...news.map((n) => ({ 
           ...n, 
           showAllText: false, 
@@ -349,21 +447,25 @@ export default {
           showComments: true, 
           commentsPage: 0, 
           comments: [],
+          kolComments: 0,
           isEditing: false,
         }))); // Добавляем новости к списку
 
-        //console.log(this.newsList);
+        this.newsList.forEach(item => {
+              this.countComments(item['title']);
+        });
 
-        if (!this.newsLoaded) {//загружаем первые комментарии, когда страница только открыта
-          this.newsList.forEach(item => {
-            this.loadMoreComments(item['title']);
-            console.log("коммы "+item['comments']);
-              /*console.log("коммы "+item['comments']);
-              console.log("заголовок "+item['title']);
-              console.log("Коммы: " + this.loadMoreComments(item['title']));*/
+        if(this.currentUser!==null){
+          if (!this.newsLoaded) {//загружаем первые комментарии и кол-во всех комм-в, когда страница только открыта
+            this.newsList.forEach(item => {
+              this.loadMoreComments(item['title']);
+              //console.log("коммы "+item['comments']);
             });
-            this.newsLoaded = true;
+
+              this.newsLoaded = true;
+          }
         }
+        
 
         console.log('Current page:', this.currentPage);
         this.currentPage++;
@@ -416,6 +518,12 @@ export default {
       console.log(newsTitle);
       console.log(newsItem);
       newsItem.showAllText = !newsItem.showAllText;
+    },
+    async countComments(title){               //--------------------------------------------------
+      const newsItem = this.newsList.find((news) => news.title === title);
+      const kol = await countComm(title);
+      newsItem.kolComments = kol;
+      return kol;
     },
     // Функция для добавления комментария
     async submitComment(title, text) {
@@ -596,14 +704,68 @@ export default {
         throw error
         }
     },
+    async addTheme(){
+      try {
+        const token = localStorage.getItem("token"); // Получаем JWT токен
+        const response = await apiConfig.post('/addNewTheme', null, {
+          params: {theme_name: this.newTheme},
+          headers: {
+                  'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+                }
+        });
+        window.location.reload();
+        return response.data; 
+      } catch (error) {
+        console.error('Ошибка при добавлении темы:', error);
+        throw error
+        }
+    },
+
+
+    async loadName(){
+      const token = localStorage.getItem("token");
+      const response2 = await apiAuth.get('/getFIO', {
+          headers: {
+              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+            }
+          });
+      console.log(response2.data);
+      localStorage.setItem('name', response2.data.name);
+      this.currentUser = localStorage.getItem("name");
+    },
+
+    async sortByThemes(){
+      let chosenThemes = Array.from(this.sortThemes);
+      localStorage.setItem("checkedThemes", JSON.stringify(chosenThemes));
+      let notChosenThemes = this.themes.filter(theme => !chosenThemes.includes(theme));
+      console.log(chosenThemes);
+      console.log(notChosenThemes);
+      await chosenThemes.forEach(theme => {
+        addPreference(theme);
+        alert(theme);
+      });
+      await notChosenThemes.forEach(theme => {
+        delPreference(theme);
+        alert(theme);
+      });
+      window.location.reload();
+    }
   },
   mounted() {
     if (!this.newsLoaded) {
-      this.loadThemes();  //Загружаем список тем
-      
+      if(localStorage.getItem('token')){
+        this.loadThemes();  //Загружаем список тем
+        this.loadName();
+      }
       this.loadNews();  // Загружаем новости, только если они ещё не загружены
+      console.log("polzovatel " + this.currentUser);
     }
-    this.currentUser = localStorage.getItem("person");
+
+    // Загружаем выбор тем из localStorage
+    const savedValue = localStorage.getItem("checkedThemes");
+    if (savedValue !== null) {
+      this.sortThemes = JSON.parse(savedValue);
+    }
 
     if(localStorage.getItem('person') == 'Admin@gmail.com'){  //определяем кто пользователь
       this.isAdmin = true;
@@ -626,6 +788,10 @@ export default {
 
 .flex{
   @include flex;
+}
+
+.no-wrap{
+  @include no-wrap;
 }
 
 .column{
@@ -680,4 +846,15 @@ export default {
   @include themesText;
 }
 
+.addTheme{
+  @include addTheme;
+}
+
+.chooseThemes{
+  @include chooseThemes;
+}
+
+.disabled{
+  @include disabled;
+}
 </style>

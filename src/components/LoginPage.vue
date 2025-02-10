@@ -40,8 +40,6 @@
 
 <script>
 import axios from 'axios';
-//import { useAuthStore } from "../store/auth.store";
-
 
 const apiAuth = axios.create({ 
   baseURL: 'http://localhost:8081/auth', // URL сервера

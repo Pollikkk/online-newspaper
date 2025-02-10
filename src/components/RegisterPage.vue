@@ -54,14 +54,13 @@
 <script>
 import axios from 'axios';
 
-
-/*const apiAuth = axios.create({ 
+const apiAuth = axios.create({ 
   baseURL: 'http://localhost:8081/auth', // URL сервера
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-});*/
+});
 
 export default {
   name: 'RegisterPage',
@@ -128,7 +127,7 @@ export default {
           
             console.log("Отправляемый запрос:", requestData);
 
-            const response = await axios.post('http://localhost:8081/auth/registration', 
+            const response = await apiAuth.post('/registration', 
               {
                 name: this.credentials.name,
                 lastname: this.credentials.lastname,
@@ -150,6 +149,12 @@ export default {
             localStorage.setItem('person', this.credentials.email);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             alert("Вы успешно зарегистрированы!")
+            const response2 = await apiAuth.get('/getFIO', {
+            headers: {
+                'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+              }
+            });
+            localStorage.setItem('fio', response2.data.name);
             // Переход на страницу новостей
             window.location.href = "/main";
           } 

@@ -69,6 +69,8 @@ methods:{
             // Удаление данных из localStorage
             localStorage.removeItem('person');
             localStorage.removeItem('token');
+            localStorage.removeItem('name');
+            localStorage.removeItem('checkedThemes');
             location.reload();
         }
     } catch (error) {
@@ -79,8 +81,7 @@ methods:{
 
 },
 computed:{
-  username(){ return localStorage.getItem('person')},
-
+  username(){ return localStorage.getItem('name')},
 }
 
 }
