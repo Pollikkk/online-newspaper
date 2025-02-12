@@ -13,6 +13,7 @@ $btn-send-color: #958eff;
 @mixin flex {
     display: flex;
     justify-content: space-between;
+    
 }
 
 @mixin no-wrap {
@@ -135,7 +136,7 @@ $btn-send-color: #958eff;
 
 @mixin stickyColumn{
   position: fixed;
-  top: 15%;
+  top: 10%;
 }
 
 @mixin addTheme{
@@ -155,8 +156,20 @@ $btn-send-color: #958eff;
   z-index: 10;
 }
 
-@mixin disabled {
+@mixin disabled{
   opacity: 0.5; /* Делаем бледным */
   pointer-events: none; /* Отключаем клики */
   cursor: not-allowed; /* Запрещаем курсор */
+}
+
+@mixin headerSortThemes{
+  color: #958eff;
+  margin-left: 20px;
+}
+@mixin mainHeaderSortThemes{
+  color: $primary-color;
+  font-weight:bolder;
+}
+
+@mixin arrowButton{
 }

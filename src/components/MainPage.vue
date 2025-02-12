@@ -3,20 +3,36 @@
     <v-row>
     <v-col xs="12" sm="6" v-if="error" class="error">{{ error }}</v-col>
     <v-col :cols="isAdmin ? 8 : 12" v-else>
-      <v-card class="chooseThemes" color="black" v-show="isAdmin">
-        <v-card-title>Сортировка по темам:</v-card-title>
-        <v-card-text class="flex">
-          <div class="flex no-wrap">
-            <div v-for="item in themes" :key="item" >
-            <label>
-              <input type="checkbox" :value="item" v-model="sortThemes" />
-              {{ item }}
-            </label>
-            </div>
+      <v-card class="chooseThemes" color="#1e1a57" v-show="currentUser">
+        <div class="flex">
+          <v-card-title class="mainHeaderSortThemes">Сортировка по темам:</v-card-title>
+          <v-btn color="#1e1a57" class="arrowButton" @click="showChoiseOfThemes = !showChoiseOfThemes"> {{ showChoiseOfThemes ? ' ▲ ' : ' ▼ ' }} </v-btn>
+        </div>
+          <div v-show="showChoiseOfThemes">
+            <h4 class="headerSortThemes">Показывать в первую очередь:</h4>
+            <v-card-text class="flex">
+              <div class="flex no-wrap">
+                <div v-for="item in themes" :key="item" >
+                <label>
+                  <input type="checkbox" :value="item" v-model="chooseThemes" />
+                  {{ item }}
+                </label>
+                </div>
+              </div>
+            </v-card-text>
+            <h4 class="headerSortThemes">Скрыть темы:</h4>
+            <v-card-text class="flex">
+              <div class="flex no-wrap">
+                <div v-for="item in themes" :key="item" >
+                <label>
+                  <input type="checkbox" :value="item" v-model="deleteThemes" />
+                  {{ item }}
+                </label>
+                </div>
+              </div>
+              <v-btn color="#1e1a57" @click="sortByThemes()">Настроить</v-btn>
+            </v-card-text>
           </div>
-          <v-btn color="black" @click="sortByThemes()">Настроить</v-btn>
-        </v-card-text>
-        
       </v-card>
       <div v-if="loading" class="error">Загрузка новостей...</div>
       <v-card 
@@ -137,6 +153,13 @@
           color="purple"
           label="Текст новости"
           required 
+          outlined
+          />
+          <v-text-field 
+          v-model="news.imgSource" 
+          bg-color="grey-dark"
+          color="purple"
+          label="Картинка"
           outlined
           />
           <h4>Выберите темы:</h4>
@@ -317,7 +340,7 @@ async function fetchComments(page, title) {
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             }
     });
-    const data = response.data;
+    const data = Object.values(response.data);  //чтоб избежать ошибок с forEach
     console.log("Ответ при получении комментов: "+response.data);
     data.forEach(item => {
             console.log(item);
@@ -358,11 +381,11 @@ async function countComm(title){
 }
 
 //РАБОТА С ПРЕДПОЧТЕНИЯМИ ПОЛЬЗОВАТЕЛЯ
-async function addPreference(theme){
+async function addPreference(theme, status){
   try {
     const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiConfig.post('/addPrefer', null, {
-        params: {theme: theme, status: true},
+        params: {theme: theme, status: status},
         headers: {
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             },
@@ -378,7 +401,7 @@ async function delPreference(theme){
   try {
     const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiConfig.delete('/delPrefer', {
-        params: {theme: theme},
+        params: {theme},
         headers: {
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             },
@@ -388,6 +411,22 @@ async function delPreference(theme){
   } catch (error) {
     console.error('Ошибка при удалении предпочтения:', error);
     throw error;
+  }
+}
+
+async function UserPrefer(){
+  try {
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await apiConfig.get('/prefersCurUsr', {
+          headers: {
+                'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+              },
+        });
+        console.log("Предпочтения пользователя: ", response.data);
+      return response.data; 
+    } catch (error) {
+      console.error('Ошибка приполучении предпочтений пользователя:', error);
+      throw error;
   }
 }
 
@@ -415,14 +454,18 @@ export default {
       news: {
         title: "",
         text: "",
+        imgSource: "",
         themes: [],
       },
       newTheme: '',
       themes: [],
-      sortThemes: [],
+      chooseThemes: [],
+      deleteThemes: [],
 
       //флаги для прогружающей новости кнопки
       allNews: false,
+
+      showChoiseOfThemes: true
     };
   },
   name: 'MainPage',
@@ -459,7 +502,6 @@ export default {
           if (!this.newsLoaded) {//загружаем первые комментарии и кол-во всех комм-в, когда страница только открыта
             this.newsList.forEach(item => {
               this.loadMoreComments(item['title']);
-              //console.log("коммы "+item['comments']);
             });
 
               this.newsLoaded = true;
@@ -733,22 +775,45 @@ export default {
       localStorage.setItem('name', response2.data.name);
       this.currentUser = localStorage.getItem("name");
     },
-
+    //ТЕМАТИКИ
     async sortByThemes(){
-      let chosenThemes = Array.from(this.sortThemes);
-      localStorage.setItem("checkedThemes", JSON.stringify(chosenThemes));
-      let notChosenThemes = this.themes.filter(theme => !chosenThemes.includes(theme));
+      const prevChoise = [...localStorage.getItem("checkedThemes"), localStorage.getItem("forbiddenThemes")]||[];
+      if(prevChoise !== null){
+        prevChoise.forEach(theme => { //удаляем все прошлые предпочтения
+          delPreference(theme);
+        });
+      }
+      
+      localStorage.removeItem("checkedThemes");
+      localStorage.removeItem("forbiddenThemes");
+
+      let chosenThemes = Array.from(this.chooseThemes);
+      let forbiddenThemes = Array.from(this.deleteThemes);
       console.log(chosenThemes);
-      console.log(notChosenThemes);
+      console.log(forbiddenThemes);
       await chosenThemes.forEach(theme => {
-        addPreference(theme);
-        alert(theme);
+        addPreference(theme, true);
       });
-      await notChosenThemes.forEach(theme => {
-        delPreference(theme);
-        alert(theme);
+      await forbiddenThemes.forEach(theme => {
+        addPreference(theme, false);
       });
       window.location.reload();
+    },
+    async usersPreferences(){
+      const preferences = await UserPrefer(); //любимые темы
+      const filteredKeys1 = Object.entries(preferences)
+        .filter(([, value]) => value === true) // Оставляем только ключи с true
+        .map(([key]) => key); // Извлекаем только ключи
+      localStorage.setItem("checkedThemes", JSON.stringify(filteredKeys1));
+      this.chooseThemes = filteredKeys1;
+      //console.log("checkedThemes", filteredKeys1);
+
+      const filteredKeys2 = Object.entries(preferences) //запрещенные темы
+        .filter(([, value]) => value === false) // Оставляем только ключи с false
+        .map(([key]) => key); // Извлекаем только ключи
+      localStorage.setItem("forbiddenThemes", JSON.stringify(filteredKeys2));
+      this.deleteThemes = filteredKeys2;
+      //console.log("forbiddenThemes", filteredKeys2);
     }
   },
   mounted() {
@@ -756,15 +821,11 @@ export default {
       if(localStorage.getItem('token')){
         this.loadThemes();  //Загружаем список тем
         this.loadName();
+        this.usersPreferences();
       }
       this.loadNews();  // Загружаем новости, только если они ещё не загружены
       console.log("polzovatel " + this.currentUser);
-    }
-
-    // Загружаем выбор тем из localStorage
-    const savedValue = localStorage.getItem("checkedThemes");
-    if (savedValue !== null) {
-      this.sortThemes = JSON.parse(savedValue);
+      
     }
 
     if(localStorage.getItem('person') == 'Admin@gmail.com'){  //определяем кто пользователь
@@ -856,5 +917,16 @@ export default {
 
 .disabled{
   @include disabled;
+}
+
+.headerSortThemes{
+  @include headerSortThemes;
+}
+.mainHeaderSortThemes{
+  @include mainHeaderSortThemes;
+}
+
+.arrowButton{
+  @include arrowButton;
 }
 </style>
