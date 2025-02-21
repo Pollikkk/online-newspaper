@@ -57,19 +57,19 @@ methods:{
             localStorage.removeItem('token');
             localStorage.removeItem('name');
             localStorage.removeItem('checkedThemes');
+            localStorage.removeItem('isAdmin');
             location.reload();
         }
     } catch (error) {
         console.error('Ошибка при выходе:', error);
         alert('Не удалось выйти. Попробуйте еще раз.');
     }
-}
-
+},
 },
 computed:{
   username(){ return localStorage.getItem('name')},
   isAdmin(){
-    return localStorage.getItem("person") == "Admin@gmail.com" ? true : false;
+    return localStorage.getItem("isAdmin") ? true : false;
   }
 }
 

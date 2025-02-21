@@ -368,7 +368,23 @@ async function UserPrefer(){
         console.log("Предпочтения пользователя: ", response.data);
       return response.data; 
     } catch (error) {
-      console.error('Ошибка приполучении предпочтений пользователя:', error);
+      console.error('Ошибка при получении предпочтений пользователя: ', error);
+      throw error;
+  }
+}
+
+async function who(){
+  try{
+    const token = localStorage.getItem("token"); // Получаем JWT токен
+    const response = await apiAuth.get('/who', {
+          headers: {
+                'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
+              },
+        });
+        console.log("Кто: ", response.data);
+      return response.data; 
+    } catch (error) {
+      console.error('Ошибка при получении who: ', error);
       throw error;
   }
 }
@@ -515,6 +531,7 @@ export default {
       // Находим новость по заголовку
       const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
+      if(text == '') return;
 
       try {
         const token = localStorage.getItem("token"); // Получаем JWT токен
@@ -763,6 +780,9 @@ export default {
       //console.log("forbiddenThemes", filteredKeys2);
     }
   },
+  computed(){
+
+  },
   mounted() {
     if (!this.newsLoaded) {
       if(localStorage.getItem('token')){
@@ -772,12 +792,18 @@ export default {
       }
       this.loadNews();  // Загружаем новости, только если они ещё не загружены
       console.log("polzovatel " + this.currentUser);
-      
     }
 
-    if(localStorage.getItem('person') == 'Admin@gmail.com'){  //определяем кто пользователь
-      this.isAdmin = true;
-    }
+    who().then(result => {
+      result == 1 ? this.isAdmin = true : this.isAdmin = false;
+      console.log("Кто " + result); // Выведет 1 или 0
+      if(this.isAdmin == true){
+        localStorage.setItem("isAdmin", true);
+      } 
+    })
+    .catch(error => {
+        console.error("Ошибка в mounted:", error);
+      });
   }
 }
 </script>
