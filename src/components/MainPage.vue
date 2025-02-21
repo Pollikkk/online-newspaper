@@ -780,9 +780,6 @@ export default {
       //console.log("forbiddenThemes", filteredKeys2);
     }
   },
-  computed(){
-
-  },
   mounted() {
     if (!this.newsLoaded) {
       if(localStorage.getItem('token')){
@@ -802,7 +799,7 @@ export default {
       } 
     })
     .catch(error => {
-        console.error("Ошибка в mounted:", error);
+        console.error("Ошибка определения isAdmin: ", error);
       });
   }
 }
