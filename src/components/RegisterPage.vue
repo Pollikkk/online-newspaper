@@ -44,7 +44,7 @@
                   v-model="credentials.password_confirmation"
                 >
                 </v-text-field>
-                <v-btn block type="submit" @click="register" color="#0e0d27">Зарегистрироваться</v-btn>
+                <v-btn block type="button" @click="register" color="#0e0d27">Зарегистрироваться</v-btn>
       </v-form>
       </v-row>
       </v-card>

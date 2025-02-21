@@ -2,7 +2,7 @@
   <v-container>
     <v-row>
     <v-col xs="12" sm="6" v-if="error" class="error">{{ error }}</v-col>
-    <v-col :cols="isAdmin ? 8 : 12" v-else>
+    <v-col :cols="12" v-else>
       <v-card class="chooseThemes" color="#1e1a57" v-show="currentUser">
         <div class="flex">
           <v-card-title class="mainHeaderSortThemes">Сортировка по темам:</v-card-title>
@@ -67,8 +67,6 @@
                   <span :class="[likeValue(item.likedByThisUser), { disabled: currentUser===null }]" href="#" @click="likeNewsItem(item.title, !item.likedByThisUser)"> ♡ </span>
                   {{ item.countLikes }}
                 </span>
-                <!--<v-btn color="black" v-if="isAdmin" @click="delNew(item.title)">DEL</v-btn>
-                <v-btn color="black" v-if="isAdmin" @click="redNew(item.title)">RED</v-btn>-->
               </v-col>
             </v-layout>
           </v-container>
@@ -136,63 +134,6 @@
       <v-btn color="#fff" @click="loadNews" v-if="!allNews">Загрузить еще</v-btn>
       <div  class="error" v-else>Это пока все новости</div>
     </v-col>
-    <v-col cols="4" v-if="isAdmin">
-      <v-card color="black" class="stickyColumn" >
-        <v-card-title>Добавить новость:</v-card-title>
-        <v-text-field 
-          v-model="news.title" 
-          bg-color="grey-dark"
-          color="purple"
-          label="Заголовок"
-          required 
-          outlined
-          />
-        <v-textarea
-          v-model="news.text" 
-          bg-color="grey-dark"
-          color="purple"
-          label="Текст новости"
-          required 
-          outlined
-          />
-          <v-text-field 
-          v-model="news.imgSource" 
-          bg-color="grey-dark"
-          color="purple"
-          label="Картинка"
-          outlined
-          />
-          <h4>Выберите темы:</h4>
-          <div v-for="item in themes" :key="item">
-            <label>
-              <input type="checkbox" :value="item" v-model="news.themes" />
-              {{ item }}
-            </label>
-          </div>
-        <v-btn flat color="purple" :disabled="!news.title || !news.text || !news.themes" @click="addNew()">
-          Отправить
-        </v-btn>
-      </v-card>
-    </v-col>
-    <v-col cols="4" v-if="isAdmin">
-      <v-card class="stickyColumn addTheme" color="black" >
-        <v-card-title>Добавить тему:</v-card-title>
-        <v-text-field 
-          v-model="newTheme" 
-          bg-color="grey-dark"
-          color="purple"
-          label="Название"
-          required 
-          outlined
-          />
-        <v-btn flat color="purple" :disabled="!newTheme" @click="addTheme()">
-          Отправить
-        </v-btn>
-        
-      </v-card>
-    </v-col>
-
-
   </v-row>
 
   </v-container>
@@ -398,15 +339,17 @@ async function addPreference(theme, status){
   }
 }
 async function delPreference(theme){
+  console.log(theme);
   try {
     const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiConfig.delete('/delPrefer', {
-        params: {theme},
+        params: {theme: theme.trim()},
         headers: {
               'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
             },
       });
       console.log("delPreference " + theme);
+      
     return response.data; 
   } catch (error) {
     console.error('Ошибка при удалении предпочтения:', error);
@@ -777,11 +720,14 @@ export default {
     },
     //ТЕМАТИКИ
     async sortByThemes(){
-      const prevChoise = [...localStorage.getItem("checkedThemes"), localStorage.getItem("forbiddenThemes")]||[];
-      if(prevChoise !== null){
-        prevChoise.forEach(theme => { //удаляем все прошлые предпочтения
-          delPreference(theme);
-        });
+      const prevChoise = [
+      ...(JSON.parse(localStorage.getItem("checkedThemes")) || []),
+      ...(JSON.parse(localStorage.getItem("forbiddenThemes")) || [])
+      ].filter(item => item.trim());
+
+      console.log("prevChoise: "+prevChoise);
+      if(prevChoise.length > 0){
+        await Promise.all(prevChoise.map(theme => delPreference(theme)));
       }
       
       localStorage.removeItem("checkedThemes");
@@ -789,14 +735,15 @@ export default {
 
       let chosenThemes = Array.from(this.chooseThemes);
       let forbiddenThemes = Array.from(this.deleteThemes);
-      console.log(chosenThemes);
-      console.log(forbiddenThemes);
-      await chosenThemes.forEach(theme => {
-        addPreference(theme, true);
-      });
-      await forbiddenThemes.forEach(theme => {
-        addPreference(theme, false);
-      });
+      console.log("checkedThemes: " + chosenThemes);
+      console.log("forbiddenThemes: " + forbiddenThemes);
+      if(chosenThemes.length > 0){
+        await Promise.all(chosenThemes.map(theme => addPreference(theme, true)));
+      }
+      if (forbiddenThemes.length > 0) {
+        await Promise.all(forbiddenThemes.map(theme => addPreference(theme, false)));
+      }
+      
       window.location.reload();
     },
     async usersPreferences(){
@@ -830,7 +777,7 @@ export default {
 
     if(localStorage.getItem('person') == 'Admin@gmail.com'){  //определяем кто пользователь
       this.isAdmin = true;
-    }else this.isAdmin = false;
+    }
   }
 }
 </script>

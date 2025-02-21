@@ -2,6 +2,7 @@ import { createRouter, createWebHistory  } from 'vue-router';
 import MainPage from './components/MainPage.vue';
 import LoginPage from './components/LoginPage.vue';
 import RegisterPage from './components/RegisterPage.vue';
+import AdminPage from './components/AdminPage.vue';
 
 const router = createRouter({
 	routes: [
@@ -12,26 +13,22 @@ const router = createRouter({
 		{
 			name: 'main',
 			path: '/main',
-			component: MainPage,
-            /*meta: { 
-                requiresAuth: true
-            }*/
+			component: MainPage
 		},
 		{
 			name: 'login',
 			path: '/login',
-			component: LoginPage,
-            /*meta: { 
-                guest: true
-            }*/
+			component: LoginPage
 		},
 		{
 			name: 'register',
 			path: '/register',
-			component: RegisterPage,
-            /*meta: { 
-                guest: true
-            }*/
+			component: RegisterPage
+		},
+        {
+			name: 'admin',
+			path: '/admin',
+			component: AdminPage
 		},
 	]
 	,

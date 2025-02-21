@@ -10,6 +10,9 @@
     </v-app-bar-title>
     <v-app-bar-items class="footerLinks">
       <div v-if="!getUser()">Привет, {{ username }}</div>
+      <router-link :to="{ path: '/admin'}" v-if="isAdmin">
+        <v-btn flat>Редактор</v-btn>
+      </router-link>
       <router-link :to="{ path: '/login'}" v-if="getUser()">
         <v-btn flat>Войти</v-btn>
       </router-link>
@@ -19,7 +22,6 @@
 </template>
 
 <script>
-//import { useAuthStore } from "../store/auth.store";
 import axios from 'axios';
 export default {
 setup() {
@@ -29,22 +31,6 @@ methods:{
     console.log(localStorage.getItem('person'))
     return localStorage.getItem('token') == null; 
   },
-  /*async logout(){
-    try {
-        const response = await axios.get('http://localhost:8081/auth/logout');
-        axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
-        if (response.status === 200) {
-          alert('Вы успешно вышли!');
-          // Перенаправление на главную страницу
-          localStorage.removeItem('person');
-          localStorage.removeItem('token');
-          location.reload();
-        }
-      } catch (error) {
-        console.error('Ошибка при выходе:', error);
-        alert('Не удалось выйти. Попробуйте еще раз.');
-      }
-  }*/
   async logout() {
     try {
         // Установите заголовок Authorization с токеном из localStorage
@@ -82,6 +68,9 @@ methods:{
 },
 computed:{
   username(){ return localStorage.getItem('name')},
+  isAdmin(){
+    return localStorage.getItem("person") == "Admin@gmail.com" ? true : false;
+  }
 }
 
 }

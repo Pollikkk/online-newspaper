@@ -26,7 +26,7 @@
               >
               </v-text-field>
         
-              <v-btn block type="submit" @click="login" color="#0e0d27">
+              <v-btn block type="button" @click="login" color="#0e0d27">
                 Войти
               </v-btn>
               <router-link :to="{ path: '/register'}">
@@ -88,6 +88,10 @@ export default {
   methods:{
     async login() {
       try {
+        if(this.credentials.email == "" || this.credentials.password == ""){
+          alert("Заполните пустые поля!");
+          return;
+        }
         const response = await apiAuth.post('/login', {
           email: this.credentials.email,
           password: this.credentials.password
