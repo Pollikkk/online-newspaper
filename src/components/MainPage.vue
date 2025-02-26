@@ -100,21 +100,19 @@
               </div>
             </v-row>
               
-            <!--<v-row v-show="currentUser!==null">-->
-              <v-row class="flex column" md="6" v-if="item.kolComments!==0">
-                <v-card color="#000" class="comments"
-                  v-for="(item1, index1) in item.comments"
-                  id="item1.id"
-                  :key="index1"
-                  >
-                  <strong>{{item1.text}}</strong>
-                  <i>{{item1.ownerName}} {{new Date(item1.createdAt).toISOString().split('T')[0]}} {{new Date(item1.createdAt).toTimeString().split(' ')[0]}}</i>
-                  <v-btn color="black" v-show="isAdmin" @click="delComment(item.title, item1.id)">DEL</v-btn>
-                </v-card>
-                <v-btn color="black" v-show="currentUser" @click="loadMoreComments(item.title)">ещё комментарии... </v-btn>
-              </v-row>
-              <v-row v-else>Комментариев пока нет</v-row>
-            <!--</v-row>-->
+            <v-row class="flex column" md="6" v-if="item.kolComments!==0">
+              <v-card color="#000" class="comments"
+                v-for="(item1, index1) in item.comments"
+                id="item1.id"
+                :key="index1"
+                >
+                <strong>{{item1.text}}</strong>
+                <i>{{item1.ownerName}} {{new Date(item1.createdAt).toISOString().split('T')[0]}} {{new Date(item1.createdAt).toTimeString().split(' ')[0]}}</i>
+                <v-btn color="black" v-show="isAdmin" @click="delComment(item.title, item1.id)">DEL</v-btn>
+              </v-card>
+              <v-btn color="black" @click="loadMoreComments(item.title)" v-if="!item.allComments">ещё комментарии... </v-btn>
+            </v-row>
+            <v-row v-else>Комментариев пока нет</v-row>
             
             <v-row v-if="currentUser != null">
               <v-textarea
@@ -271,15 +269,11 @@ async function unlikeNews(title, email) {
 // Функция для получения комментариев
 async function fetchComments(page, title) {
   try {
-    const token = localStorage.getItem("token"); // Получаем JWT токен
     const response = await apiClient.get('/showComm', {
       params: { 
         page: page, 
         title: title 
-      },
-      headers: {
-              'Authorization': `Bearer ${token}`, // Добавляем токен в заголовок
-            }
+      }
     });
     const data = Object.values(response.data);  //чтоб избежать ошибок с forEach
     console.log("Ответ при получении комментов: "+response.data);
@@ -450,6 +444,7 @@ export default {
           commentsPage: 0, 
           comments: [],
           kolComments: 0,
+          allComments: false,
           isEditing: false,
         }))); // Добавляем новости к списку
 
@@ -457,17 +452,12 @@ export default {
               this.countComments(item['title']);
         });
 
-        if(this.currentUser!==null){
-          if (!this.newsLoaded) {//загружаем первые комментарии и кол-во всех комм-в, когда страница только открыта
-            this.newsList.forEach(item => {
-              this.loadMoreComments(item['title']);
-            });
-
-              this.newsLoaded = true;
-          }
+        if (!this.newsLoaded) {//загружаем первые комментарии и кол-во всех комм-в, когда страница только открыта
+          this.newsList.forEach(item => {
+            this.loadMoreComments(item['title']);
+          });
+            this.newsLoaded = true;
         }
-        
-
         console.log('Current page:', this.currentPage);
         this.currentPage++;
         console.log('After news update:', this.newsList);
@@ -491,7 +481,6 @@ export default {
         const newsItem = this.newsList.find((news) => news.title === title);
         newsItem.likedByThisUser = liked;
         if(liked){
-          //await likeNews(title);
           await likeNews(title);
           newsItem.countLikes = newsItem.countLikes + 1;
         }
@@ -504,9 +493,7 @@ export default {
       }
     },
     likeValue(value){//определяем, лайкнут ли пост
-      //console.log(this.textsStore.likes.find(y=>y.id === id).peopeId.indexOf(3));
       return value === true ? 'liked' : 'notLiked'; //меняем стили
-      //return 'notLiked';
     },
 
     amountOfText(newsTitle){//проверяем кол-во текста
@@ -550,7 +537,6 @@ export default {
         if (response.status === 200) {
           console.log('Комментарий успешно добавлен');
           alert('Комментарий успешно добавлен');
-          //newsItem.comments.push(response.data);
           window.location.reload();
           newsItem.commentText = ''; // Очистка поля после успешной отправки
         } else {
@@ -566,12 +552,20 @@ export default {
       // Находим новость по заголовку
       const newsItem = this.newsList.find((news) => news.title === title);
       if (!newsItem) return;
-
       try {
         const commentsList = await fetchComments(newsItem.commentsPage, newsItem.title);
-        newsItem.comments.push(...commentsList); // Добавляем комментарии к списку
+      
+        if(commentsList !== ''){
+          console.log('COMMS: '+commentsList);
+          newsItem.comments.push(...commentsList); // Добавляем комментарии к списку
+        }
+        else{
+          newsItem.allComments = true;
+        }
+        return commentsList;
       } catch (error) {
         console.error('Ошибка при загрузке комментариев:', error);
+        return null;
       }
     },
     loadMoreComments(title) {
@@ -580,6 +574,7 @@ export default {
       if (!newsItem) return;
       this.loadComments(title);
       newsItem.commentsPage++;
+      return 1;
     },
     async loadThemes(){
       try {
@@ -647,8 +642,6 @@ export default {
         } else {
           console.error("Ошибка: id равен undefined перед вызовом redNew2");
         }
-        /*await this.redNew2(id, title)
-        console.log("id "+id);*/
       }
     },
     async redNew1(title){ //отправка запроса на сервер на получение id новости
@@ -770,14 +763,12 @@ export default {
         .map(([key]) => key); // Извлекаем только ключи
       localStorage.setItem("checkedThemes", JSON.stringify(filteredKeys1));
       this.chooseThemes = filteredKeys1;
-      //console.log("checkedThemes", filteredKeys1);
 
       const filteredKeys2 = Object.entries(preferences) //запрещенные темы
         .filter(([, value]) => value === false) // Оставляем только ключи с false
         .map(([key]) => key); // Извлекаем только ключи
       localStorage.setItem("forbiddenThemes", JSON.stringify(filteredKeys2));
       this.deleteThemes = filteredKeys2;
-      //console.log("forbiddenThemes", filteredKeys2);
     }
   },
   mounted() {
@@ -791,7 +782,8 @@ export default {
       console.log("polzovatel " + this.currentUser);
     }
 
-    who().then(result => {
+    if(this.currentUser!= null){
+      who().then(result => {
       result == 1 ? this.isAdmin = true : this.isAdmin = false;
       console.log("Кто " + result); // Выведет 1 или 0
       if(this.isAdmin == true){
@@ -801,6 +793,7 @@ export default {
     .catch(error => {
         console.error("Ошибка определения isAdmin: ", error);
       });
+    }
   }
 }
 </script>
