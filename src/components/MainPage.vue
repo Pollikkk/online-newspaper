@@ -96,7 +96,6 @@
             
             <v-row>
               <div class="likes"> Комментарии({{item.kolComments}}) 
-                <!--<v-btn color="black" @click="item.showComments=true">Показать больше... </v-btn>-->
               </div>
             </v-row>
               
@@ -574,7 +573,6 @@ export default {
       if (!newsItem) return;
       this.loadComments(title);
       newsItem.commentsPage++;
-      return 1;
     },
     async loadThemes(){
       try {
